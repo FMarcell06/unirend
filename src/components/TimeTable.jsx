@@ -1,7 +1,4 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '../supabaseClient'
-import { useAuth } from '../context/AuthContext'
-import './Timetable.css'
+import './TimeTable.css'
 
 const DAYS = [
   { value: 1, label: 'Hétfő' },
@@ -14,54 +11,48 @@ const DAYS = [
 const START_HOUR = 8
 const END_HOUR = 20
 
-export const Timetable = () => {
-  const { user } = useAuth()
-  const [courses, setCourses] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+const timeToMinutes = (time) => {
+  const [h, m] = time.split(':').map(Number)
+  return h * 60 + m
+}
 
-  useEffect(() => {
-    if (!user) return
+const groupOverlapping = (sessions) => {
+  const sorted = [...sessions].sort(
+    (a, b) => timeToMinutes(a.start_time) - timeToMinutes(b.start_time)
+  )
 
-    const fetchCourses = async () => {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('courses')
-        .select(`
-          id, name, code, color, instructor, location,
-          sessions ( id, day_of_week, start_time, end_time, type, room )
-        `)
-        .eq('user_id', user.id)
+  const clusters = []
 
-      if (error) {
-        setError(error.message)
-      } else {
-        setCourses(data)
-      }
-      setLoading(false)
+  for (const session of sorted) {
+    const start = timeToMinutes(session.start_time)
+    const end = timeToMinutes(session.end_time)
+
+    const targetCluster = clusters.find((cluster) =>
+      cluster.some((s) => {
+        const sStart = timeToMinutes(s.start_time)
+        const sEnd = timeToMinutes(s.end_time)
+        return start < sEnd && sStart < end
+      })
+    )
+
+    if (targetCluster) {
+      targetCluster.push(session)
+    } else {
+      clusters.push([session])
     }
+  }
 
-    fetchCourses()
-  }, [user])
+  return clusters
+}
 
-  if (loading) return <p>Betöltés...</p>
-  if (error) return <p style={{ color: 'red' }}>{error}</p>
-
-  // laposra hozzuk: minden session-t kiemelünk a hozzá tartozó kurzus adataival együtt
+export const TimeTable = ({ courses }) => {
   const allSessions = courses.flatMap((course) =>
     (course.sessions || []).map((session) => ({
       ...session,
       courseName: course.name,
-      courseCode: course.code,
       color: course.color,
     }))
   )
-
-  // időpozíció kiszámítása a griden belül (perc alapon, START_HOUR-tól)
-  const timeToMinutes = (time) => {
-    const [h, m] = time.split(':').map(Number)
-    return h * 60 + m
-  }
 
   const totalMinutes = (END_HOUR - START_HOUR) * 60
 
@@ -75,7 +66,6 @@ export const Timetable = () => {
       </div>
 
       <div className="timetable-body">
-        {/* óravonalak a bal oldalon */}
         <div className="time-col">
           {Array.from({ length: END_HOUR - START_HOUR }, (_, i) => (
             <div key={i} className="time-label">
@@ -84,33 +74,50 @@ export const Timetable = () => {
           ))}
         </div>
 
-        {/* napi oszlopok */}
-        {DAYS.map((day) => (
-          <div key={day.value} className="day-col">
-            {allSessions
-              .filter((s) => s.day_of_week === day.value)
-              .map((session) => {
-                const top = ((timeToMinutes(session.start_time) - START_HOUR * 60) / totalMinutes) * 100
-                const height = ((timeToMinutes(session.end_time) - timeToMinutes(session.start_time)) / totalMinutes) * 100
+        {DAYS.map((day) => {
+          const daySessions = allSessions.filter((s) => s.day_of_week === day.value)
+          const clusters = groupOverlapping(daySessions)
+
+          return (
+            <div key={day.value} className="day-col">
+              {clusters.map((cluster, i) => {
+                const clusterStart = Math.min(...cluster.map((s) => timeToMinutes(s.start_time)))
+                const clusterEnd = Math.max(...cluster.map((s) => timeToMinutes(s.end_time)))
+                const top = ((clusterStart - START_HOUR * 60) / totalMinutes) * 100
+                const height = ((clusterEnd - clusterStart) / totalMinutes) * 100
 
                 return (
                   <div
-                    key={session.id}
-                    className="session-block"
-                    style={{
-                      top: `${top}%`,
-                      height: `${height}%`,
-                      backgroundColor: session.color || '#3b82f6',
-                    }}
+                    key={i}
+                    className="cluster-wrapper"
+                    style={{ top: `${top}%`, height: `${height}%` }}
                   >
-                    <strong>{session.courseName}</strong>
-                    <div>{session.start_time.slice(0, 5)}–{session.end_time.slice(0, 5)}</div>
-                    {session.room && <div>{session.room}</div>}
+                    {cluster.map((session) => {
+                      const innerTop = ((timeToMinutes(session.start_time) - clusterStart) / (clusterEnd - clusterStart)) * 100
+                      const innerHeight = ((timeToMinutes(session.end_time) - timeToMinutes(session.start_time)) / (clusterEnd - clusterStart)) * 100
+
+                      return (
+                        <div
+                          key={session.id}
+                          className="session-block"
+                          style={{
+                            top: `${innerTop}%`,
+                            height: `${innerHeight}%`,
+                            backgroundColor: session.color || '#3b82f6',
+                          }}
+                        >
+                          <strong>{session.courseName}</strong>
+                            <strong>{session.courseName}</strong>
+                          <div>{session.start_time.slice(0, 5)}–{session.end_time.slice(0, 5)}</div>
+                        </div>
+                      )
+                    })}
                   </div>
                 )
               })}
-          </div>
-        ))}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

@@ -44,8 +44,9 @@
 
 .day-col {
   position: relative;
-  height: 720px; /* (END_HOUR - START_HOUR) * 60px, azaz 12 óra * 60px */
+  height: 720px;
   border-left: 1px solid #eee;
+  overflow: hidden;
   background-image: repeating-linear-gradient(
     to bottom,
     transparent,
@@ -54,14 +55,23 @@
   );
 }
 
-.session-block {
+.cluster-wrapper {
   position: absolute;
-  left: 2px;
-  right: 2px;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 2px;
+  padding: 0 2px;
+  box-sizing: border-box;
+}
+
+.session-block {
+  position: relative;
+  flex: 1;
   border-radius: 4px;
   padding: 4px 6px;
   color: white;
-  font-size: 12px;
+  font-size: 11px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  box-sizing: border-box;
 }

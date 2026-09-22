@@ -29,21 +29,63 @@ export const AddCourse = () => {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
+  // segédfüggvény: "HH:MM" -> percek száma
+  const timeToMinutes = (time) => {
+    const [h, m] = time.split(':').map(Number)
+    return h * 60 + m
+  }
+
+  const checkOverlap = async () => {
+    // lekérjük a user összes session-jét, amiknek a kurzusa hozzá tartozik
+    const { data, error } = await supabase
+      .from('sessions')
+      .select('id, day_of_week, start_time, end_time, courses!inner(user_id, name)')
+      .eq('courses.user_id', user.id)
+      .eq('day_of_week', dayOfWeek)
+
+    if (error) {
+      // ha az ellenőrzés hibázik, ne blokkoljuk a mentést, csak logoljuk
+      console.error('Overlap check error:', error)
+      return null
+    }
+
+    const newStart = timeToMinutes(startTime)
+    const newEnd = timeToMinutes(endTime)
+
+    const conflict = data.find((s) => {
+      const existingStart = timeToMinutes(s.start_time)
+      const existingEnd = timeToMinutes(s.end_time)
+      return newStart < existingEnd && existingStart < newEnd
+    })
+
+    return conflict || null
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
+
+    if (endTime <= startTime) {
+      setError('A befejezés időpontjának a kezdés után kell lennie.')
+      return
+    }
+
     setLoading(true)
 
-    // 1. lépés: kurzus létrehozása
+    const conflict = await checkOverlap()
+    if (conflict) {
+      const proceed = window.confirm(
+        `Ez az időpont ütközik ezzel: "${conflict.courses.name}" (${conflict.start_time.slice(0,5)}–${conflict.end_time.slice(0,5)}). Mégis felveszed?`
+      )
+      if (!proceed) {
+        setLoading(false)
+        return
+      }
+    }
+
     const { data: course, error: courseError } = await supabase
       .from('courses')
-      .insert({
-        user_id: user.id,
-        name,
-        code,
-        instructor,
-        color,
-      })
+      .insert({ user_id: user.id, name, code, instructor, color })
       .select()
       .single()
 
@@ -53,7 +95,6 @@ export const AddCourse = () => {
       return
     }
 
-    // 2. lépés: az első session hozzáadása ehhez a kurzushoz
     const { error: sessionError } = await supabase
       .from('sessions')
       .insert({
