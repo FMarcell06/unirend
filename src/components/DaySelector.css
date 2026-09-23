@@ -1,0 +1,24 @@
+.day-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.day-selector-btn {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.day-selector-btn.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.day-selector-btn:hover:not(.active) {
+  background: #f5f5f5;
+}

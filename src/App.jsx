@@ -1,20 +1,22 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
 import { Route, Routes } from 'react-router-dom'
 import { Home } from './pages/Home'
+import { Login } from './pages/Login'
+import { SignUp } from './pages/SignUp'
+import { AuthProvider } from './context/AuthContext'
+import { ProtectedRoute } from './components/ProtectedRoute'
+import './App.css'
+import { AddCourse } from './pages/AddCourses'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <div>
+    <AuthProvider>
       <Routes>
-        <Route path='/' element={<Home/>}></Route>
+        <Route path='/login' element={<Login />} />
+        <Route path='/signup' element={<SignUp />} />
+        <Route path='/'element={<ProtectedRoute><Home /></ProtectedRoute>}/>
+        <Route path='/add-course'element={<ProtectedRoute><AddCourse /></ProtectedRoute>}/>
       </Routes>
-    </div>
+    </AuthProvider>
   )
 }
 
