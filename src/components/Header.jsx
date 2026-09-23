@@ -19,7 +19,9 @@ export const Header = () => {
         <Link to="/" className="header-logo">📅 Órarend</Link>
         <nav className="header-nav">
           <Link to="/">Órarend</Link>
-          <Link to="/add-course">+ Új kurzus</Link>
+          <Link to="/add-course">Új kurzus</Link>
+          <Link to="/courses">Kurzusaim</Link>
+          <Link to="/social">Ismerősök</Link>
         </nav>
       </div>
 
