@@ -7,7 +7,7 @@ export const SignUp = () => {
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
-  const { signUp } = useAuth()
+  const { signUp, signInWithGoogle } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -24,6 +24,12 @@ export const SignUp = () => {
     } else {
       navigate('/')
     }
+  }
+
+  const handleGoogleSignIn = async () => {
+    setError(null)
+    const { error } = await signInWithGoogle()
+    if (error) setError(error.message)
   }
 
   return (
@@ -49,6 +55,13 @@ export const SignUp = () => {
           {loading ? 'Regisztráció...' : 'Regisztráció'}
         </button>
       </form>
+
+      <div style={{ margin: '16px 0', textAlign: 'center' }}>vagy</div>
+
+      <button onClick={handleGoogleSignIn} type="button">
+        Regisztráció Google-lel
+      </button>
+
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <p>Van már fiókod? <Link to="/login">Jelentkezz be</Link></p>
     </div>
