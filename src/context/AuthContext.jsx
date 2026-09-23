@@ -5,42 +5,66 @@ const AuthContext = createContext()
 
 export const AuthProvider = ({ children }) => {
   const [session, setSession] = useState(null)
+  const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  const fetchProfile = async (userId) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single()
+
+    if (!error) setProfile(data)
+  }
+
   useEffect(() => {
-    // aktuális session lekérése induláskor
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
+      if (session?.user) fetchProfile(session.user.id)
       setLoading(false)
     })
 
-    // feliratkozás auth állapot változásra (login/logout/token refresh)
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
+      if (session?.user) {
+        fetchProfile(session.user.id)
+      } else {
+        setProfile(null)
+      }
     })
 
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  const signUp = (email, password) => {
-    return supabase.auth.signUp({ email, password })
+  const signUp = (email, password) => supabase.auth.signUp({ email, password })
+  const signIn = (email, password) => supabase.auth.signInWithPassword({ email, password })
+
+  const signInWithGoogle = () => {
+    return supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    })
   }
 
-  const signIn = (email, password) => {
-    return supabase.auth.signInWithPassword({ email, password })
-  }
+  const signOut = () => supabase.auth.signOut()
 
-  const signOut = () => {
-    return supabase.auth.signOut()
+  const refreshProfile = () => {
+    if (session?.user) fetchProfile(session.user.id)
   }
 
   const value = {
     session,
     user: session?.user ?? null,
+    profile,
     loading,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
+    refreshProfile,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
