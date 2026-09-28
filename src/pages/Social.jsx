@@ -1,31 +1,50 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
+import { showSuccess, showError } from '../toast'
+import './Social.css'
+
+const SearchIcon = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="11" cy="11" r="7" />
+    <path d="m20 20-3.5-3.5" />
+  </svg>
+)
+
+const PersonAvatar = ({ profile }) =>
+  profile.avatar_url ? (
+    <img className="person-avatar" src={profile.avatar_url} alt="" />
+  ) : (
+    <div className="person-avatar person-avatar-fallback">
+      {(profile.display_name || '?').trim().charAt(0).toUpperCase()}
+    </div>
+  )
 
 export const Social = () => {
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [searchResults, setSearchResults] = useState([])
+  const [searched, setSearched] = useState(false)
   const [searching, setSearching] = useState(false)
 
   const [friends, setFriends] = useState([])
   const [incomingRequests, setIncomingRequests] = useState([])
   const [outgoingRequests, setOutgoingRequests] = useState([])
   const [loading, setLoading] = useState(true)
+  const [busyId, setBusyId] = useState(null)
 
   const fetchFriendships = async () => {
-    setLoading(true)
+    const { data, error } = await supabase
+      .from('friendships')
+      .select(`
+        id, status, user_id, friend_id,
+        requester:profiles!friendships_user_id_profiles_fkey(id, display_name, avatar_url, university),
+        addressee:profiles!friendships_friend_id_profiles_fkey(id, display_name, avatar_url, university)
+      `)
+      .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
 
-const { data, error } = await supabase
-  .from('friendships')
-  .select(`
-    id, status, user_id, friend_id,
-    requester:profiles!friendships_user_id_profiles_fkey(id, display_name, avatar_url, university),
-    addressee:profiles!friendships_friend_id_profiles_fkey(id, display_name, avatar_url, university)
-  `)
-  .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
     if (error) {
-      console.error(error)
+      showError('Nem sikerült betölteni az ismerősöket.')
       setLoading(false)
       return
     }
@@ -40,12 +59,10 @@ const { data, error } = await supabase
 
       if (row.status === 'accepted') {
         accepted.push({ friendshipId: row.id, profile: otherProfile })
-      } else if (row.status === 'pending') {
-        if (isMine) {
-          outgoing.push({ friendshipId: row.id, profile: otherProfile })
-        } else {
-          incoming.push({ friendshipId: row.id, profile: otherProfile })
-        }
+      } else if (isMine) {
+        outgoing.push({ friendshipId: row.id, profile: otherProfile })
+      } else {
+        incoming.push({ friendshipId: row.id, profile: otherProfile })
       }
     }
 
@@ -59,169 +76,217 @@ const { data, error } = await supabase
     if (user) fetchFriendships()
   }, [user])
 
-const handleSearch = async (e) => {
-  e.preventDefault()
-  if (!searchTerm.trim()) return
+  const handleSearch = async (e) => {
+    e.preventDefault()
+    if (!searchTerm.trim()) return
 
-  setSearching(true)
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, display_name, avatar_url, university')
-    .ilike('display_name', `%${searchTerm}%`)
-    .neq('id', user.id)
-    .limit(10)
+    setSearching(true)
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, display_name, avatar_url, university')
+      .ilike('display_name', `%${searchTerm.trim()}%`)
+      .neq('id', user.id)
+      .limit(15)
 
-  console.log('search term:', searchTerm)
-  console.log('data:', data)
-  console.log('error:', error)
+    if (error) showError('Hiba a keresés közben.')
+    else setSearchResults(data)
 
-  if (!error) setSearchResults(data)
-  setSearching(false)
-}
+    setSearched(true)
+    setSearching(false)
+  }
 
-const fetchAllProfiles = async () => {
-  setSearching(true)
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, display_name, avatar_url, university')
-    .neq('id', user.id)
-    .limit(50)
-
-  if (!error) setSearchResults(data)
-  setSearching(false)
-}
+  const isAlreadyConnected = (profileId) =>
+    friends.some((f) => f.profile.id === profileId) ||
+    incomingRequests.some((r) => r.profile.id === profileId) ||
+    outgoingRequests.some((r) => r.profile.id === profileId)
 
   const sendRequest = async (friendId) => {
+    setBusyId(friendId)
     const { error } = await supabase
       .from('friendships')
       .insert({ user_id: user.id, friend_id: friendId, status: 'pending' })
 
+    setBusyId(null)
+
     if (error) {
-      alert('Hiba: ' + error.message)
+      showError('Hiba: ' + error.message)
       return
     }
-    setSearchResults((prev) => prev.filter((p) => p.id !== friendId))
     fetchFriendships()
+    showSuccess('Barátkérés elküldve!')
   }
 
   const acceptRequest = async (friendshipId) => {
+    setBusyId(friendshipId)
     const { error } = await supabase
       .from('friendships')
       .update({ status: 'accepted' })
       .eq('id', friendshipId)
 
-    if (!error) fetchFriendships()
+    setBusyId(null)
+
+    if (error) {
+      showError(error.message)
+      return
+    }
+    fetchFriendships()
+    showSuccess('Barátkérés elfogadva!')
   }
 
-  const declineOrRemove = async (friendshipId) => {
-    const { error } = await supabase
-      .from('friendships')
-      .delete()
-      .eq('id', friendshipId)
+  const declineOrRemove = async (friendshipId, kind) => {
+    setBusyId(friendshipId)
+    const { error } = await supabase.from('friendships').delete().eq('id', friendshipId)
+    setBusyId(null)
 
-    if (!error) fetchFriendships()
-  }
-
-  const isAlreadyConnected = (profileId) => {
-    return (
-      friends.some((f) => f.profile.id === profileId) ||
-      incomingRequests.some((r) => r.profile.id === profileId) ||
-      outgoingRequests.some((r) => r.profile.id === profileId)
-    )
+    if (error) {
+      showError(error.message)
+      return
+    }
+    fetchFriendships()
+    if (kind === 'remove') showSuccess('Ismerős eltávolítva.')
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 700, margin: '0 auto' }}>
-      <h1>Ismerősök</h1>
-
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-        <input
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Keresés név alapján..."
-            style={{ flex: 1 }}
-        />
-        <button type="submit" disabled={searching}>Keresés</button>
-        <button type="button" onClick={fetchAllProfiles} disabled={searching}>Mindenki</button>
-        </form>
-
-      {searchResults.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <h3>Találatok</h3>
-          {searchResults.map((p) => (
-            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0' }}>
-              {p.avatar_url ? (
-                <img src={p.avatar_url} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
-              ) : (
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#ddd' }} />
-              )}
-              <div style={{ flex: 1 }}>
-                <strong>{p.display_name}</strong>
-                {p.university && <div style={{ fontSize: 13, color: '#777' }}>{p.university}</div>}
-              </div>
-              {isAlreadyConnected(p.id) ? (
-                <span style={{ fontSize: 13, color: '#999' }}>Már kapcsolatban</span>
-              ) : (
-                <button onClick={() => sendRequest(p.id)}>Hozzáadás</button>
-              )}
-            </div>
-          ))}
+    <div className="social-page">
+      <div className="page-head">
+        <div>
+          <h1>Ismerősök</h1>
+          {!loading && <p>{friends.length} ismerős</p>}
         </div>
+      </div>
+
+      <form className="search-bar glass-card" onSubmit={handleSearch}>
+        <SearchIcon />
+        <input
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Keresés név alapján…"
+        />
+        <button type="submit" className="btn btn-primary btn-sm" disabled={searching}>
+          {searching ? 'Keresés…' : 'Keresés'}
+        </button>
+      </form>
+
+      {searched && (
+        <section className="social-section">
+          <h2>Találatok</h2>
+          {searchResults.length === 0 ? (
+            <p className="section-empty">Nincs ilyen nevű felhasználó.</p>
+          ) : (
+            <div className="person-list">
+              {searchResults.map((p) => (
+                <div key={p.id} className="glass-card person-row">
+                  <PersonAvatar profile={p} />
+                  <div className="person-info">
+                    <strong>{p.display_name}</strong>
+                    {p.university && <span>{p.university}</span>}
+                  </div>
+                  {isAlreadyConnected(p.id) ? (
+                    <span className="person-status">Már kapcsolatban</span>
+                  ) : (
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={() => sendRequest(p.id)}
+                      disabled={busyId === p.id}
+                    >
+                      Hozzáadás
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       )}
 
       {loading ? (
-        <p>Betöltés...</p>
+        <p className="page-status">Betöltés…</p>
       ) : (
         <>
           {incomingRequests.length > 0 && (
-            <div style={{ marginBottom: 24 }}>
-              <h3>Beérkezett kérések</h3>
-              {incomingRequests.map((r) => (
-                <div key={r.friendshipId} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0' }}>
-                  {r.profile.avatar_url ? (
-                    <img src={r.profile.avatar_url} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
-                  ) : (
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#ddd' }} />
-                  )}
-                  <strong style={{ flex: 1 }}>{r.profile.display_name}</strong>
-                  <button onClick={() => acceptRequest(r.friendshipId)}>Elfogadás</button>
-                  <button onClick={() => declineOrRemove(r.friendshipId)}>Elutasítás</button>
-                </div>
-              ))}
-            </div>
+            <section className="social-section">
+              <h2>Beérkezett kérések</h2>
+              <div className="person-list">
+                {incomingRequests.map((r) => (
+                  <div key={r.friendshipId} className="glass-card person-row">
+                    <PersonAvatar profile={r.profile} />
+                    <div className="person-info">
+                      <strong>{r.profile.display_name}</strong>
+                      {r.profile.university && <span>{r.profile.university}</span>}
+                    </div>
+                    <div className="person-actions">
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => acceptRequest(r.friendshipId)}
+                        disabled={busyId === r.friendshipId}
+                      >
+                        Elfogadás
+                      </button>
+                      <button
+                        className="btn btn-sm"
+                        onClick={() => declineOrRemove(r.friendshipId, 'decline')}
+                        disabled={busyId === r.friendshipId}
+                      >
+                        Elutasítás
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
           )}
 
           {outgoingRequests.length > 0 && (
-            <div style={{ marginBottom: 24 }}>
-              <h3>Küldött kérések</h3>
-              {outgoingRequests.map((r) => (
-                <div key={r.friendshipId} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0' }}>
-                  <span style={{ flex: 1 }}>{r.profile.display_name}</span>
-                  <span style={{ fontSize: 13, color: '#999' }}>Függőben...</span>
-                  <button onClick={() => declineOrRemove(r.friendshipId)}>Visszavonás</button>
-                </div>
-              ))}
-            </div>
+            <section className="social-section">
+              <h2>Küldött kérések</h2>
+              <div className="person-list">
+                {outgoingRequests.map((r) => (
+                  <div key={r.friendshipId} className="glass-card person-row">
+                    <PersonAvatar profile={r.profile} />
+                    <div className="person-info">
+                      <strong>{r.profile.display_name}</strong>
+                      <span>Függőben…</span>
+                    </div>
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => declineOrRemove(r.friendshipId, 'cancel')}
+                      disabled={busyId === r.friendshipId}
+                    >
+                      Visszavonás
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
           )}
 
-          <div>
-            <h3>Ismerőseim ({friends.length})</h3>
-            {friends.length === 0 && <p>Még nincs ismerősöd.</p>}
-            {friends.map((f) => (
-              <div key={f.friendshipId} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0' }}>
-                {f.profile.avatar_url ? (
-                  <img src={f.profile.avatar_url} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
-                ) : (
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#ddd' }} />
-                )}
-                <div style={{ flex: 1 }}>
-                  <strong>{f.profile.display_name}</strong>
-                  {f.profile.university && <div style={{ fontSize: 13, color: '#777' }}>{f.profile.university}</div>}
-                </div>
-                <button onClick={() => declineOrRemove(f.friendshipId)}>Eltávolítás</button>
+          <section className="social-section">
+            <h2>Ismerőseim</h2>
+            {friends.length === 0 ? (
+              <div className="glass-card empty-state">
+                <p>Még nincs ismerősöd. Keress rá valakire fent a névvel.</p>
               </div>
-            ))}
-          </div>
+            ) : (
+              <div className="person-list">
+                {friends.map((f) => (
+                  <div key={f.friendshipId} className="glass-card person-row">
+                    <PersonAvatar profile={f.profile} />
+                    <div className="person-info">
+                      <strong>{f.profile.display_name}</strong>
+                      {f.profile.university && <span>{f.profile.university}</span>}
+                    </div>
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => declineOrRemove(f.friendshipId, 'remove')}
+                      disabled={busyId === f.friendshipId}
+                    >
+                      Eltávolítás
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </>
       )}
     </div>

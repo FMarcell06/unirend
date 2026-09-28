@@ -1,0 +1,144 @@
+.social-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 8px 16px 32px;
+}
+
+.social-page .page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+
+.social-page .page-head h1 {
+  font-size: 22px;
+}
+
+.social-page .page-head p {
+  margin: 2px 0 0;
+  color: var(--color-text-soft);
+  font-size: 13px;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+  padding: 10px 14px;
+  color: var(--color-text-soft);
+}
+
+.search-bar input {
+  flex: 1;
+  border: none;
+  background: none;
+  color: var(--color-text);
+  font-size: 15px;
+  outline: none;
+}
+
+.social-section {
+  margin-bottom: 24px;
+}
+
+.social-section h2 {
+  margin-bottom: 10px;
+  padding: 0 4px;
+  color: var(--color-text-soft);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.section-empty {
+  margin: 0;
+  padding: 0 4px;
+  color: var(--color-text-soft);
+  font-size: 14px;
+}
+
+.person-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.person-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.person-avatar {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.person-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-soft));
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.person-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.person-info strong {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.person-info span {
+  overflow: hidden;
+  color: var(--color-text-soft);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.person-status {
+  flex-shrink: 0;
+  color: var(--color-text-soft);
+  font-size: 12px;
+}
+
+.person-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+@media (max-width: 768px) {
+  .social-page {
+    padding: 4px 12px 24px;
+  }
+
+  .person-row {
+    flex-wrap: wrap;
+  }
+
+  .person-actions,
+  .person-row > .btn {
+    flex-basis: 100%;
+    justify-content: flex-end;
+    margin-left: 54px; /* az avatár + gap szélessége, hogy a gombok alá igazodjanak */
+  }
+}

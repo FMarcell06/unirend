@@ -43,4 +43,4 @@ export const CourseModal = ({ session, onClose }) => {
       )}
     </Modal>
   )
-}
+}   

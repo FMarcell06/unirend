@@ -56,7 +56,6 @@ export const Header = () => {
             )}
             <span className="desktop-only">{profile?.display_name || user.email}</span>
           </Link>
-          <button onClick={handleSignOut} className="header-signout desktop-only">Kijelentkezés</button>
         </div>
       </header>
 
