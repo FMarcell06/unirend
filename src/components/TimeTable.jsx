@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { CourseModal } from './CourseModal'
-import { DaySelector } from './DaySelector'
+import { DayNav } from './DayNav'
 import { useIsMobile } from '../useIsMobile'
+import { getDayMessage } from '../dayMessages'
 import './Timetable.css'
 
 const DAYS = [
@@ -77,10 +78,20 @@ export const TimeTable = ({ courses, colorMode = 'custom' }) => {
 
   const totalMinutes = (END_HOUR - START_HOUR) * 60
   const hourCount = END_HOUR - START_HOUR
-  const daysToShow = viewMode === 'day' ? DAYS.filter((d) => d.value === selectedDay) : DAYS
+  const isDayView = viewMode === 'day'
+  const daysToShow = isDayView ? DAYS.filter((d) => d.value === selectedDay) : DAYS
 
   const nowTop = ((nowMinutes - START_HOUR * 60) / totalMinutes) * 100
   const showNow = nowTop >= 0 && nowTop <= 100
+
+  // az üzenet a saját napodról szól, ezért a közös nézetben nem jelenik meg
+  const dayMessage = isDuo
+    ? null
+    : getDayMessage({
+        sessions: allSessions.filter((s) => s.day_of_week === selectedDay && s.isMine !== false),
+        dayValue: selectedDay,
+        isToday: selectedDay === todayValue,
+      })
 
   const getBlockBackground = (session) => {
     if (isDuo) return session.isMine === false ? DUO_BACKGROUND.friend : DUO_BACKGROUND.mine
@@ -100,19 +111,25 @@ export const TimeTable = ({ courses, colorMode = 'custom' }) => {
         </button>
       </div>
 
-      {viewMode === 'day' && (
-        <DaySelector selectedDay={selectedDay} onSelectDay={setSelectedDay} todayValue={todayValue} />
+      {isDayView ? (
+        <DayNav
+          days={DAYS}
+          selectedDay={selectedDay}
+          onChange={setSelectedDay}
+          todayValue={todayValue}
+          message={dayMessage}
+        />
+      ) : (
+        <div className="timetable-header" style={{ gridTemplateColumns: columns }}>
+          <div />
+          {DAYS.map((day) => (
+            <div key={day.value} className={`day-header ${day.value === todayValue ? 'is-today' : ''}`}>
+              <span className="day-full">{day.label}</span>
+              <span className="day-short">{day.short}</span>
+            </div>
+          ))}
+        </div>
       )}
-
-      <div className="timetable-header" style={{ gridTemplateColumns: columns }}>
-        <div />
-        {daysToShow.map((day) => (
-          <div key={day.value} className={`day-header ${day.value === todayValue ? 'is-today' : ''}`}>
-            <span className="day-full">{day.label}</span>
-            <span className="day-short">{day.short}</span>
-          </div>
-        ))}
-      </div>
 
       <div className="timetable-body" style={{ gridTemplateColumns: columns, '--hour-count': hourCount }}>
         <div className="time-col">
