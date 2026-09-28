@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Modal } from 'react-responsive-modal'
 import 'react-responsive-modal/styles.css'
 import { supabase } from '../supabaseClient'
+import { showSuccess, showError } from '../toast'
 import { useAuth } from '../context/AuthContext'
 
 const DAYS = [
@@ -104,11 +105,12 @@ export const CourseFormModal = ({ open, onClose, onSaved, editingCourse }) => {
         .select()
         .single()
 
-      if (courseError) {
+        if (courseError) {
+        showError(courseError.message)
         setError(courseError.message)
         setLoading(false)
         return
-      }
+        }
 
       const { error: sessionError } = await supabase
         .from('sessions')
@@ -119,13 +121,15 @@ export const CourseFormModal = ({ open, onClose, onSaved, editingCourse }) => {
         })
 
       if (sessionError) {
+        showError(sessionError.message)
         setError(sessionError.message)
         setLoading(false)
         return
-      }
+        }
     }
 
     setLoading(false)
+    showSuccess(isEditing ? 'Kurzus frissítve!' : 'Kurzus hozzáadva!')
     onSaved()
     onClose()
   }

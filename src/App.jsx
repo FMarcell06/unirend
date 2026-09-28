@@ -10,9 +10,12 @@ import { Profile } from './pages/Profile'
 import { Header } from './components/Header'
 import { Courses } from './pages/Courses'
 import { Social } from './pages/Social'
+import { CommonView } from './pages/CommonView'
+import { ThemeProvider } from './context/ThemeContext'
 
 function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <Header />
       <Routes>
@@ -23,8 +26,10 @@ function App() {
         <Route path='/profile'element={<ProtectedRoute><Profile /></ProtectedRoute>}/>
         <Route path='/courses'element={<ProtectedRoute><Courses /></ProtectedRoute>}/>
         <Route path='/social'element={<ProtectedRoute><Social /></ProtectedRoute>}/>
+        <Route path='/common'element={<ProtectedRoute><CommonView /></ProtectedRoute>}/>
       </Routes>
     </AuthProvider>
+    </ThemeProvider>
   )
 }
 

@@ -1,77 +1,364 @@
-.timetable {
+/* ---------- oldal-layout ---------- */
+.home-page {
   display: flex;
   flex-direction: column;
+  height: calc(100dvh - 90px);
+  padding: 8px 16px 0;
+}
+
+.home-greeting {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto 12px;
+  padding: 0 8px;
+}
+
+.home-greeting h1 {
+  font-size: 22px;
+}
+
+/* ---------- üveg kártya + tokenek ---------- */
+.timetable {
+  --grid-line: rgba(0, 0, 0, 0.1);
+  --grid-line-soft: rgba(0, 0, 0, 0.045);
+  --today-tint: rgba(10, 132, 255, 0.06);
+  --toggle-bg: rgba(0, 0, 0, 0.05);
+  --toggle-active-bg: #ffffff;
+  --time-col: 44px;
+
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
   max-width: 1000px;
   margin: 0 auto;
-  font-family: sans-serif;
+  padding: 16px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow);
 }
 
+[data-theme="dark"] .timetable {
+  --grid-line: rgba(255, 255, 255, 0.14);
+  --grid-line-soft: rgba(255, 255, 255, 0.06);
+  --today-tint: rgba(10, 132, 255, 0.12);
+  --toggle-bg: rgba(255, 255, 255, 0.06);
+  --toggle-active-bg: rgba(255, 255, 255, 0.16);
+}
+
+/* ---------- nézet váltó ---------- */
+.view-toggle {
+  display: flex;
+  gap: 4px;
+  width: fit-content;
+  margin-bottom: 14px;
+  padding: 4px;
+  background: var(--toggle-bg);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.view-toggle button {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-soft);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.view-toggle button.active {
+  background: var(--toggle-active-bg);
+  color: var(--color-text);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ---------- napválasztó (napi nézet) ---------- */
+.day-selector {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.day-selector-btn {
+  padding: 7px 14px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--toggle-bg);
+  color: var(--color-text-soft);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.day-selector-btn.active {
+  background: var(--color-accent);
+  color: white;
+}
+
+/* ---------- rács ---------- */
 .timetable-header {
   display: grid;
-  grid-template-columns: 60px repeat(5, 1fr);
-}
-
-.time-col-header {
-  border-bottom: 1px solid #ddd;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--grid-line);
 }
 
 .day-header {
+  padding: 8px 0 10px;
   text-align: center;
-  font-weight: bold;
-  padding: 8px 0;
-  border-bottom: 1px solid #ddd;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-soft);
+  min-width: 0;
+}
+
+.day-header.is-today {
+  color: var(--color-text);
+}
+
+.day-header.is-today span {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: white;
+}
+
+.day-short {
+  display: none;
+}
+
+.day-selector-btn.is-today:not(.active) {
+  color: var(--color-accent);
+}
+
+.day-selector-btn.is-today {
+  position: relative;
+}
+
+.day-selector-btn.is-today::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .timetable-body {
   display: grid;
-  grid-template-columns: 60px repeat(5, 1fr);
-  position: relative;
+  flex: 1;
+  min-height: 0;
+  border-bottom: 1px solid var(--grid-line);
 }
 
 .time-col {
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .time-label {
-  height: 60px;
-  font-size: 12px;
-  color: #888;
+  flex: 1;
+  padding: 3px 8px 0 0;
   text-align: right;
-  padding-right: 6px;
-  border-top: 1px solid #eee;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-soft);
 }
 
 .day-col {
   position: relative;
-  height: 720px;
-  border-left: 1px solid #eee;
+  height: 100%;
   overflow: hidden;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent,
-    transparent 59px,
-    #eee 60px
-  );
+  border-left: 1px solid var(--grid-line);
+  /* óravonal + halvány félórás vonal, a magassághoz igazodva */
+  background-image:
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line-soft) 1px, transparent 1px);
+  background-size:
+    100% calc(100% / var(--hour-count)),
+    100% calc(100% / var(--hour-count) / 2);
 }
 
+.day-col.is-today {
+  background-color: var(--today-tint);
+}
+
+/* aktuális idő jelző */
+.now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #ff3b30;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.now-line::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff3b30;
+}
+
+/* ---------- órablokkok ---------- */
 .cluster-wrapper {
   position: absolute;
   left: 0;
   right: 0;
   display: flex;
-  gap: 2px;
-  padding: 0 2px;
+  gap: 3px;
+  padding: 1px 3px; /* kis hézag az egymás utáni órák között */
   box-sizing: border-box;
 }
 
 .session-block {
   position: relative;
   flex: 1;
-  border-radius: 4px;
-  padding: 4px 6px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
   color: white;
   font-size: 11px;
+  line-height: 1.3;
   overflow: hidden;
   box-sizing: border-box;
+  cursor: pointer;
+  background-color: #3b82f6;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.14);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* finom üveg-fény a blokk tetején */
+.session-block::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 60%);
+  pointer-events: none;
+}
+
+.session-block > * {
+  position: relative;
+}
+
+.session-block:hover {
+  transform: scale(1.02);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.session-block strong {
+  display: block;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.session-time {
+  opacity: 0.92;
+}
+
+.session-room {
+  opacity: 0.8;
+}
+
+/* ---------- közös nézet segédelemek ---------- */
+.common-controls {
+  flex-shrink: 0;
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto 12px;
+  padding: 0 8px;
+}
+
+.common-controls select {
+  padding: 8px 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--color-text-soft);
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 50%;
+}
+
+.legend-dot.mine { background: #0a84ff; }
+.legend-dot.friend { background: #8b5cf6; }
+
+/* ---------- mobil ---------- */
+@media (max-width: 768px) {
+  .timetable {
+    --time-col: 34px;
+  }
+
+  .day-full {
+    display: none;
+  }
+
+  .day-short {
+    display: inline;
+  }
+
+  .day-header {
+    font-size: 12px;
+    padding: 6px 0 8px;
+  }
+
+  .day-header.is-today span {
+    padding: 2px 6px;
+  }
+
+  .time-label {
+    padding-right: 4px;
+    font-size: 9px;
+  }
+
+  /* egyforma széles napválasztó, görgetés nélkül */
+  .day-selector {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    overflow: visible;
+  }
+
+  .day-selector-btn {
+    padding: 8px 0;
+  }
 }
