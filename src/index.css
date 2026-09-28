@@ -266,4 +266,20 @@ input, select {
   .glass-card { padding: 16px; }
   /* 16px alatt az iOS Safari ráközelít a mezőre fókuszáláskor */
   .field input, .field select { font-size: 16px; }
+
+  .day-nav-controls {
+    flex: 1 1 100%;
+  }
+
+  .day-pill {
+    padding: 0;
+  }
+    .day-header .day-full,
+  .day-header.is-today .day-full { display: none; }
+
+  .day-header .day-short { display: inline; }
+  .day-header.is-today .day-short {
+    display: inline-block;
+    padding: 2px 8px;
+  }
 }

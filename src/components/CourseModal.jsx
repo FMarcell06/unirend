@@ -1,47 +1,45 @@
 import { Modal } from 'react-responsive-modal'
 import 'react-responsive-modal/styles.css'
+import './GlassModal.css'
 
-const DAYS_HU = {
-  1: 'Hétfő', 2: 'Kedd', 3: 'Szerda', 4: 'Csütörtök', 5: 'Péntek',
-}
-
-const TYPE_HU = {
-  lecture: 'Előadás', practice: 'Gyakorlat', lab: 'Labor',
-}
+const DAYS_HU = { 1: 'Hétfő', 2: 'Kedd', 3: 'Szerda', 4: 'Csütörtök', 5: 'Péntek' }
+const TYPE_HU = { lecture: 'Előadás', practice: 'Gyakorlat', lab: 'Labor' }
 
 export const CourseModal = ({ session, onClose }) => {
-  const open = Boolean(session)
+  const rows = session
+    ? [
+        ['Kód', session.courseCode],
+        ['Oktató', session.instructor],
+        ['Nap', DAYS_HU[session.day_of_week]],
+        ['Időpont', `${session.start_time.slice(0, 5)}–${session.end_time.slice(0, 5)}`],
+        ['Típus', TYPE_HU[session.type] || session.type],
+        ['Terem', session.room],
+      ].filter(([, value]) => value)
+    : []
 
   return (
     <Modal
-      open={open}
+      open={Boolean(session)}
       onClose={onClose}
       center
-      classNames={{
-        modal: 'course-modal',
-      }}
-      styles={{
-        modal: {
-          borderTop: session ? `6px solid ${session.color || '#3b82f6'}` : 'none',
-          borderRadius: '8px',
-          minWidth: '320px',
-          maxWidth: '400px',
-        },
-      }}
+      classNames={{ overlay: 'glass-overlay', modal: 'glass-modal' }}
     >
       {session && (
-        <div>
-          <h2 style={{ color: session.color || '#3b82f6', marginTop: 0 }}>
-            {session.courseName}
-          </h2>
+        <>
+          <div className="detail-head">
+            <span className="detail-swatch" style={{ background: session.color || '#0a84ff' }} />
+            <h2>{session.courseName}</h2>
+          </div>
 
-          {session.courseCode && <p><strong>Kód:</strong> {session.courseCode}</p>}
-          {session.instructor && <p><strong>Oktató:</strong> {session.instructor}</p>}
-          <p><strong>Nap:</strong> {DAYS_HU[session.day_of_week]}</p>
-          <p><strong>Időpont:</strong> {session.start_time.slice(0, 5)}–{session.end_time.slice(0, 5)}</p>
-          {session.type && <p><strong>Típus:</strong> {TYPE_HU[session.type] || session.type}</p>}
-          {session.room && <p><strong>Terem:</strong> {session.room}</p>}
-        </div>
+          <dl className="detail-list">
+            {rows.map(([label, value]) => (
+              <div key={label} style={{ display: 'contents' }}>
+                <dt>{label}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </>
       )}
     </Modal>
   )
