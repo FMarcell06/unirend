@@ -1,18 +1,17 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate, Link } from 'react-router-dom'
+import { showSuccess, showError } from '../toast'
 
 export const SignUp = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const { signUp, signInWithGoogle } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError(null)
     setLoading(true)
 
     const { error } = await signUp(email, password)
@@ -20,16 +19,16 @@ export const SignUp = () => {
     setLoading(false)
 
     if (error) {
-      setError(error.message)
+      showError(error.message)
     } else {
+      showSuccess('Sikeres regisztráció!')
       navigate('/')
     }
   }
 
   const handleGoogleSignIn = async () => {
-    setError(null)
     const { error } = await signInWithGoogle()
-    if (error) setError(error.message)
+    if (error) showError(error.message)
   }
 
   return (
@@ -62,7 +61,6 @@ export const SignUp = () => {
         Regisztráció Google-lel
       </button>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
       <p>Van már fiókod? <Link to="/login">Jelentkezz be</Link></p>
     </div>
   )

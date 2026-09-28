@@ -1,0 +1,165 @@
+:root {
+  --color-bg: #f2f4f8;
+  --color-accent: #0a84ff;
+  --color-accent-soft: #8b5cf6;
+  --color-text: #1d1d1f;
+  --color-text-soft: #6e6e73;
+
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-blur: blur(20px) saturate(180%);
+  --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.08);
+
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--color-text);
+  background: var(--color-bg);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* elmosott háttérfoltok a mélységérzethez */
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(90px);
+  z-index: -1;
+  opacity: 0.5;
+}
+
+body::before {
+  width: 500px;
+  height: 500px;
+  top: -150px;
+  left: -100px;
+  background: #a7c7ff;
+}
+
+body::after {
+  width: 450px;
+  height: 450px;
+  bottom: -150px;
+  right: -100px;
+  background: #c9b6ff;
+}
+
+h1, h2, h3 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+button {
+  font-family: inherit;
+}
+
+input, select {
+  font-family: inherit;
+}
+
+:root {
+  --color-bg: #f2f4f8;
+  --color-accent: #0a84ff;
+  --color-accent-soft: #8b5cf6;
+  --color-text: #1d1d1f;
+  --color-text-soft: #6e6e73;
+
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-blur: blur(20px) saturate(180%);
+  --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.08);
+
+  --blob-1: #a7c7ff;
+  --blob-2: #c9b6ff;
+
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+
+  transition: background 0.2s ease;
+}
+
+[data-theme="dark"] {
+  --color-bg: #0b0b0d;
+  --color-accent: #0a84ff;
+  --color-accent-soft: #a78bfa;
+  --color-text: #f5f5f7;
+  --color-text-soft: #98989d;
+
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-blur: blur(20px) saturate(180%);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+  --blob-1: #1e3a5f;
+  --blob-2: #3b2a5c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--color-text);
+  background: var(--color-bg);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(90px);
+  z-index: -1;
+  opacity: 0.5;
+  transition: background 0.2s ease;
+}
+
+body::before {
+  width: 500px;
+  height: 500px;
+  top: -150px;
+  left: -100px;
+  background: var(--blob-1);
+}
+
+body::after {
+  width: 450px;
+  height: 450px;
+  bottom: -150px;
+  right: -100px;
+  background: var(--blob-2);
+}
+
+h1, h2, h3 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+button {
+  font-family: inherit;
+}
+
+input, select {
+  font-family: inherit;
+}

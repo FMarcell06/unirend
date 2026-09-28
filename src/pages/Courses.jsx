@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import { CourseFormModal } from '../components/CourseFormModal'
+import { showSuccess,showError } from '../toast'
 
 export const Courses = () => {
   const { user } = useAuth()
@@ -39,17 +40,19 @@ export const Courses = () => {
     setModalOpen(true)
   }
 
-  const handleDelete = async (courseId) => {
+
+    const handleDelete = async (courseId) => {
     const confirmed = window.confirm('Biztosan törlöd ezt a kurzust?')
     if (!confirmed) return
 
     const { error } = await supabase.from('courses').delete().eq('id', courseId)
     if (error) {
-      alert('Hiba: ' + error.message)
-      return
+        showError('Hiba: ' + error.message)
+        return
     }
     setCourses((prev) => prev.filter((c) => c.id !== courseId))
-  }
+    showSuccess('Kurzus törölve!')
+    }
 
   const DAYS_HU = { 1: 'Hétfő', 2: 'Kedd', 3: 'Szerda', 4: 'Csütörtök', 5: 'Péntek' }
   const TYPE_HU = { lecture: 'Előadás', practice: 'Gyakorlat', lab: 'Labor' }
