@@ -27,7 +27,13 @@ export const DayNav = ({ days, selectedDay, onChange, todayValue, message }) => 
           <Chevron direction="left" />
         </button>
 
-        <div className="day-nav-days" role="group" aria-label="Nap kiválasztása">
+        <div
+          className="day-nav-days"
+          role="group"
+          aria-label="Nap kiválasztása"
+          style={{ '--day-count': days.length }}
+        >
+          <span className="day-indicator" style={{ transform: `translateX(${index * 100}%)` }} />
           {days.map((day) => (
             <button
               key={day.value}

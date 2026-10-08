@@ -20,12 +20,12 @@
 
 /* ---------- üveg kártya + tokenek ---------- */
 .timetable {
+  --time-col: 44px;
   --grid-line: rgba(0, 0, 0, 0.1);
   --grid-line-soft: rgba(0, 0, 0, 0.045);
   --today-tint: rgba(10, 132, 255, 0.06);
   --toggle-bg: rgba(0, 0, 0, 0.05);
   --toggle-active-bg: #ffffff;
-  --time-col: 44px;
 
   display: flex;
   flex-direction: column;
@@ -50,6 +50,10 @@
   --toggle-bg: rgba(255, 255, 255, 0.06);
   --toggle-active-bg: rgba(255, 255, 255, 0.16);
 }
+
+/* ---------- rövid/teljes napnevek: alapból a teljes látszik, mindenhol ---------- */
+.day-full { display: inline; }
+.day-short { display: none; }
 
 /* ---------- nézet váltó ---------- */
 .view-toggle {
@@ -81,31 +85,168 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* ---------- napválasztó (napi nézet) ---------- */
-.day-selector {
+/* ---------- napi nézet: nyilak + napok (liquid glass kapszula) + üzenet ---------- */
+.day-nav {
   display: flex;
-  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
   margin-bottom: 12px;
   flex-shrink: 0;
-  overflow-x: auto;
 }
 
-.day-selector-btn {
-  padding: 7px 14px;
+.day-nav-controls {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 7px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 14px 30px -20px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(26px) saturate(200%);
+  -webkit-backdrop-filter: blur(26px) saturate(200%);
+}
+
+[data-theme="dark"] .day-nav-controls {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 14px 30px -20px rgba(0, 0, 0, 0.6);
+}
+
+.day-nav-btn {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
   border: none;
-  border-radius: var(--radius-sm);
-  background: var(--toggle-bg);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.day-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+[data-theme="dark"] .day-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.day-nav-btn:focus-visible,
+.day-pill:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.day-nav-days {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.day-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(100% / var(--day-count));
+  height: 100%;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px) saturate(200%);
+  -webkit-backdrop-filter: blur(10px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.5, 1);
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-theme="dark"] .day-indicator {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+.day-pill {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
   color: var(--color-text-soft);
   font-size: 13px;
   font-weight: 500;
-  cursor: pointer;
   white-space: nowrap;
-  transition: background 0.15s ease, color 0.15s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color 0.2s ease;
 }
 
-.day-selector-btn.active {
-  background: var(--color-accent);
-  color: white;
+.day-pill:hover:not(.active) {
+  color: var(--color-text);
+}
+
+.day-pill.active {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.day-pill.is-today:not(.active) {
+  color: var(--color-accent);
+}
+
+.day-pill.is-today::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.day-note {
+  flex: 1 1 160px;
+  min-width: 0;
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 13px;
+  animation: note-in 0.25s ease;
+}
+
+@keyframes note-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .day-note { animation: none; }
+  .day-indicator { transition: none; }
 }
 
 /* ---------- rács ---------- */
@@ -128,14 +269,6 @@
   color: var(--color-text);
 }
 
-.day-header.is-today span {
-  display: inline-block;
-  padding: 2px 10px;
-  border-radius: 999px;
-  background: var(--color-accent);
-  color: white;
-}
-
 .day-header.is-today .day-full,
 .day-header.is-today .day-short {
   padding: 2px 10px;
@@ -144,41 +277,12 @@
   color: #fff;
 }
 
-.day-header .day-full { display: inline; }
-.day-header .day-short { display: none; }
-
-.day-header.is-today .day-full { display: inline-block; }
-.day-header.is-today .day-short { display: none; }
-
-.day-short {
-  display: none;
-}
-
-.day-selector-btn.is-today:not(.active) {
-  color: var(--color-accent);
-}
-
-.day-selector-btn.is-today {
-  position: relative;
-}
-
-.day-selector-btn.is-today::after {
-  content: '';
-  position: absolute;
-  bottom: 3px;
-  left: 50%;
-  width: 4px;
-  height: 4px;
-  margin-left: -2px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
 .timetable-body {
   display: grid;
   flex: 1;
   min-height: 0;
   border-bottom: 1px solid var(--grid-line);
+  position: relative;
 }
 
 .time-col {
@@ -201,7 +305,6 @@
   height: 100%;
   overflow: hidden;
   border-left: 1px solid var(--grid-line);
-  /* óravonal + halvány félórás vonal, a magassághoz igazodva */
   background-image:
     linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px),
     linear-gradient(to bottom, var(--grid-line-soft) 1px, transparent 1px);
@@ -214,10 +317,10 @@
   background-color: var(--today-tint);
 }
 
-/* aktuális idő jelző */
-.now-line {
+/* aktuális idő jelző: a teljes grid szélességében, a time-col oszlop után */
+.now-line-full {
   position: absolute;
-  left: 0;
+  left: var(--time-col);
   right: 0;
   height: 2px;
   background: #ff3b30;
@@ -225,7 +328,7 @@
   pointer-events: none;
 }
 
-.now-line::before {
+.now-line-full::before {
   content: '';
   position: absolute;
   left: 0;
@@ -243,7 +346,7 @@
   right: 0;
   display: flex;
   gap: 3px;
-  padding: 1px 3px; /* kis hézag az egymás utáni órák között */
+  padding: 1px 3px;
   box-sizing: border-box;
 }
 
@@ -267,7 +370,6 @@
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* finom üveg-fény a blokk tetején */
 .session-block::before {
   content: '';
   position: absolute;
@@ -339,151 +441,61 @@
 
 /* ---------- mobil ---------- */
 @media (max-width: 768px) {
+  .home-page {
+    height: calc(100dvh - 78px);
+    padding: 6px 10px 0;
+  }
+
+  .home-greeting h1 {
+    font-size: 18px;
+  }
+
   .timetable {
     --time-col: 34px;
+    padding: 10px;
   }
 
-  .day-full {
-    display: none;
-  }
-
-  .day-short {
-    display: inline;
-  }
+  .day-full { display: none; }
+  .day-short { display: inline; }
 
   .day-header {
     font-size: 12px;
     padding: 6px 0 8px;
   }
 
+  .day-header.is-today .day-short {
+    display: inline-block;
+    padding: 2px 8px;
+  }
 
+  .day-nav-controls {
+    flex: 1 1 100%;
+  }
+
+  .day-pill {
+    padding: 0;
+  }
 
   .time-label {
     padding-right: 4px;
     font-size: 9px;
   }
 
-  /* egyforma széles napválasztó, görgetés nélkül */
-  .day-selector {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    overflow: visible;
+  .view-toggle {
+    margin-bottom: 8px;
   }
 
-  .day-selector-btn {
-    padding: 8px 0;
+  .session-block {
+    padding: 3px 5px;
+    font-size: 9px;
+    border-radius: 8px;
   }
-}
 
-/* ---------- napi nézet: nyilak + napok + üzenet ---------- */
-.day-nav {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px 14px;
-  margin-bottom: 12px;
-  flex-shrink: 0;
-}
+  .session-block strong {
+    font-size: 10px;
+  }
 
-.day-nav-controls {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  max-width: 100%;
-  padding: 3px;
-  background: var(--toggle-bg);
-  border-radius: var(--radius-sm);
-}
-
-.day-nav-btn {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--color-text);
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.day-nav-btn:hover {
-  background: var(--toggle-active-bg);
-}
-
-.day-nav-days {
-  display: flex;
-  flex: 1;
-  gap: 2px;
-  min-width: 0;
-}
-
-.day-pill {
-  position: relative;
-  flex: 1;
-  height: 34px;
-  padding: 0 14px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--color-text-soft);
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.day-pill:hover:not(.active) {
-  background: var(--toggle-active-bg);
-  color: var(--color-text);
-}
-
-.day-pill.active {
-  background: var(--color-accent);
-  color: #fff;
-}
-
-/* a mai napot egy kis pont jelöli */
-.day-pill.is-today:not(.active) {
-  color: var(--color-accent);
-}
-
-.day-pill.is-today::after {
-  content: '';
-  position: absolute;
-  bottom: 3px;
-  left: 50%;
-  width: 4px;
-  height: 4px;
-  margin-left: -2px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.day-nav-btn:focus-visible,
-.day-pill:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-}
-
-.day-note {
-  flex: 1 1 160px;
-  min-width: 0;
-  margin: 0;
-  color: var(--color-text-soft);
-  font-size: 13px;
-  animation: note-in 0.25s ease;
-}
-
-@keyframes note-in {
-  from { opacity: 0; transform: translateY(3px); }
-  to { opacity: 1; transform: none; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .day-note { animation: none; }
+  .session-room {
+    display: none;
+  }
 }

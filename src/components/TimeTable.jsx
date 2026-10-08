@@ -83,6 +83,7 @@ export const TimeTable = ({ courses, colorMode = 'custom' }) => {
 
   const nowTop = ((nowMinutes - START_HOUR * 60) / totalMinutes) * 100
   const showNow = nowTop >= 0 && nowTop <= 100
+  const todayIsVisible = daysToShow.some((d) => d.value === todayValue)
 
   // az üzenet a saját napodról szól, ezért a közös nézetben nem jelenik meg
   const dayMessage = isDuo
@@ -181,13 +182,13 @@ export const TimeTable = ({ courses, colorMode = 'custom' }) => {
                   </div>
                 )
               })}
-
-              {day.value === todayValue && showNow && (
-                <div className="now-line" style={{ top: `${nowTop}%` }} />
-              )}
             </div>
           )
         })}
+
+        {showNow && todayIsVisible && (
+          <div className="now-line-full" style={{ top: `${nowTop}%` }} />
+        )}
       </div>
 
       <CourseModal session={selectedSession} onClose={() => setSelectedSession(null)} />
