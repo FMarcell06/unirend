@@ -19,17 +19,16 @@
 }
 
 .header-logo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-weight: 600;
   font-size: 17px;
   text-decoration: none;
   color: var(--color-text);
 }
 
-.header-nav {
-  display: flex;
-  gap: 4px;
-}
-
+/* ---------- felső nav + csúszó kapszula ---------- */
 .header-nav {
   position: relative;
   display: flex;
@@ -63,7 +62,8 @@
     inset 0 -1px 1px rgba(0, 0, 0, 0.2),
     0 2px 6px rgba(0, 0, 0, 0.3);
 }
-/* ablak-átméretezés közben nincs csúszó animáció, azonnal a helyére ugrik */
+
+/* ablak-átméretezéskor / első megjelenéskor nincs csúszó animáció */
 .nav-resizing .nav-indicator {
   transition: none;
 }
@@ -71,6 +71,9 @@
 .nav-link {
   position: relative;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 6px 12px;
   border-radius: var(--radius-sm);
   color: var(--color-text-soft);
@@ -88,15 +91,37 @@
   color: var(--color-text);
 }
 
-.header-nav a:hover {
-  color: var(--color-text);
-  background: rgba(0, 0, 0, 0.04);
-}
-
+/* ---------- jobb oldal: téma kapcsoló + profil ---------- */
 .header-right {
   display: flex;
   align-items: center;
   gap: 14px;
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  font-size: 15px;
+  transition: background 0.15s ease;
+}
+
+.theme-toggle:hover {
+  background: rgba(0, 0, 0, 0.09);
+}
+
+[data-theme="dark"] .theme-toggle {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .header-profile {
@@ -137,33 +162,7 @@
   background: rgba(0, 0, 0, 0.09);
 }
 
-.theme-toggle {
-  width: 34px;
-  height: 34px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.05);
-  cursor: pointer;
-  font-size: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s ease;
-}
-
-.theme-toggle:hover {
-  background: rgba(0, 0, 0, 0.09);
-}
-
-[data-theme="dark"] .theme-toggle {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-[data-theme="dark"] .theme-toggle:hover {
-  background: rgba(255, 255, 255, 0.14);
-}
-
-/* Alsó tab-bar: alapból rejtve, csak mobilon jelenik meg */
+/* ---------- alsó tab-bar: alapból rejtve, csak mobilon jelenik meg ---------- */
 .bottom-nav {
   display: none;
 }
@@ -183,14 +182,13 @@
   }
 
   .bottom-nav {
-    position: relative; /* kell az indikátor abszolút pozicionálásához */
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
     position: fixed;
     bottom: 12px;
     left: 12px;
     right: 12px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
     padding: 8px 4px calc(8px + env(safe-area-inset-bottom, 0px));
     background: var(--glass-bg);
     backdrop-filter: var(--glass-blur);
@@ -230,5 +228,10 @@
 
   .bottom-nav-item.active {
     color: var(--color-accent);
+  }
+
+  /* hogy a tartalom ne csússzon a fix alsó nav alá */
+  body {
+    padding-bottom: 90px;
   }
 }
