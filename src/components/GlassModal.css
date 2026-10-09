@@ -157,6 +157,12 @@
   font-weight: 500;
 }
 
+.detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 22px;
+}
+
 @media (max-width: 768px) {
   /* nincs blur a teljes képernyős overlayen, csak sötétítés */
   .react-responsive-modal-overlay.glass-overlay {

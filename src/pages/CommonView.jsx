@@ -29,6 +29,16 @@ const handleSelectFriend = (id) => {
   }
 }
 
+
+const fetchMyCourses = async () => {
+  const { data, error } = await supabase
+    .from('courses')
+    .select(`id, name, code, color, instructor, sessions ( id, day_of_week, start_time, end_time, type, room )`)
+    .eq('user_id', user.id)
+
+  if (!error) setMyCourses(data)
+}
+
   // barátok lekérése (csak az elfogadottak)
   useEffect(() => {
     const fetchFriends = async () => {
@@ -61,19 +71,10 @@ useEffect(() => {
   }
 }, [friends, loading])
 
-  // saját kurzusok lekérése
-  useEffect(() => {
-    const fetchMyCourses = async () => {
-      const { data, error } = await supabase
-        .from('courses')
-        .select(`id, name, code, color, instructor, sessions ( id, day_of_week, start_time, end_time, type, room )`)
-        .eq('user_id', user.id)
+useEffect(() => {
+  if (user) fetchMyCourses()
+}, [user])
 
-      if (!error) setMyCourses(data)
-    }
-
-    if (user) fetchMyCourses()
-  }, [user])
 
   // kiválasztott barát kurzusainak lekérése
   useEffect(() => {
@@ -137,7 +138,7 @@ console.log('combinedCourses:', JSON.stringify(combinedCourses, null, 2))
           )}
         </div>
 
-        {selectedFriendId && <TimeTable courses={combinedCourses} colorMode="duo" />}
+        {selectedFriendId && <TimeTable courses={combinedCourses} colorMode="duo" onChanged={fetchMyCourses} />}
       </>
     )}
   </div>

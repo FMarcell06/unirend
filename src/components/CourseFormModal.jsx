@@ -27,20 +27,21 @@ const emptyForm = {
   dayOfWeek: 1, startTime: '08:00', endTime: '09:30', type: 'lecture', room: '',
 }
 
-export const CourseFormModal = ({ open, onClose, onSaved, editingCourse }) => {
+export const CourseFormModal = ({ open, onClose, onSaved, editingCourse, editingSessionId }) => {
   const { user } = useAuth()
   const [form, setForm] = useState(emptyForm)
   const [loading, setLoading] = useState(false)
 
   const isEditing = Boolean(editingCourse)
+  const targetSession = editingCourse?.sessions?.find((s) => s.id === editingSessionId) || editingCourse?.sessions?.[0]
   const isCustomColor = !COLORS.includes(form.color.toLowerCase())
 
-  useEffect(() => {
+    useEffect(() => {
     if (!open) return
 
     if (editingCourse) {
-      const session = editingCourse.sessions?.[0] || {}
-      setForm({
+        const session = targetSession || {}
+        setForm({
         name: editingCourse.name || '',
         code: editingCourse.code || '',
         instructor: editingCourse.instructor || '',
@@ -50,11 +51,12 @@ export const CourseFormModal = ({ open, onClose, onSaved, editingCourse }) => {
         endTime: session.end_time?.slice(0, 5) || '09:30',
         type: session.type || 'lecture',
         room: session.room || '',
-      })
+        })
     } else {
-      setForm(emptyForm)
+        setForm(emptyForm)
     }
-  }, [editingCourse, open])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editingCourse, editingSessionId, open])
 
   const update = (field, value) => setForm((f) => ({ ...f, [field]: value }))
 
@@ -95,7 +97,7 @@ export const CourseFormModal = ({ open, onClose, onSaved, editingCourse }) => {
         return
       }
 
-      const existingSessionId = editingCourse.sessions?.[0]?.id
+      const existingSessionId = targetSession?.id
       const sessionResult = existingSessionId
         ? await supabase.from('sessions').update(sessionPayload).eq('id', existingSessionId)
         : await supabase.from('sessions').insert({ ...sessionPayload, course_id: editingCourse.id })
