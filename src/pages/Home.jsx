@@ -8,18 +8,19 @@ export const Home = () => {
   const [courses, setCourses] = useState([])
   const [loading, setLoading] = useState(true)
 
+  const fetchCourses = async () => {
+    const { data, error } = await supabase
+      .from('courses')
+      .select(`id, name, code, color, instructor, sessions ( id, day_of_week, start_time, end_time, type, room )`)
+      .eq('user_id', user.id)
+
+    if (!error) setCourses(data)
+    setLoading(false)
+  }
+
   useEffect(() => {
-    const fetchCourses = async () => {
-      const { data, error } = await supabase
-        .from('courses')
-        .select(`id, name, code, color, instructor, sessions ( id, day_of_week, start_time, end_time, type, room )`)
-        .eq('user_id', user.id)
-
-      if (!error) setCourses(data)
-      setLoading(false)
-    }
-
     if (user) fetchCourses()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
   return (
@@ -28,7 +29,11 @@ export const Home = () => {
         <h1>Szia, {profile?.display_name?.split(' ')[0] || 'ott'}! 👋</h1>
       </div>
 
-      {loading ? <p style={{ textAlign: 'center' }}>Betöltés...</p> : <TimeTable courses={courses} />}
+      {loading ? (
+        <p style={{ textAlign: 'center' }}>Betöltés...</p>
+      ) : (
+        <TimeTable courses={courses} onChanged={fetchCourses} />
+      )}
     </div>
   )
 }

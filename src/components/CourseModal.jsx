@@ -5,7 +5,7 @@ import './GlassModal.css'
 const DAYS_HU = { 1: 'Hétfő', 2: 'Kedd', 3: 'Szerda', 4: 'Csütörtök', 5: 'Péntek' }
 const TYPE_HU = { lecture: 'Előadás', practice: 'Gyakorlat', lab: 'Labor' }
 
-export const CourseModal = ({ session, onClose }) => {
+export const CourseModal = ({ session, onClose, canEdit = false, onEdit }) => {
   const rows = session
     ? [
         ['Kód', session.courseCode],
@@ -22,6 +22,7 @@ export const CourseModal = ({ session, onClose }) => {
       open={Boolean(session)}
       onClose={onClose}
       center
+      animationDuration={150}
       classNames={{ overlay: 'glass-overlay', modal: 'glass-modal' }}
     >
       {session && (
@@ -39,8 +40,16 @@ export const CourseModal = ({ session, onClose }) => {
               </div>
             ))}
           </dl>
+
+          {canEdit && (
+            <div className="detail-actions">
+              <button type="button" className="btn btn-primary" onClick={onEdit}>
+                Szerkesztés
+              </button>
+            </div>
+          )}
         </>
       )}
     </Modal>
   )
-}   
+}

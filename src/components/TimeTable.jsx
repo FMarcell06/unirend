@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { CourseModal } from './CourseModal'
+import { CourseFormModal } from './CourseFormModal'
 import { DayNav } from './DayNav'
 import { useIsMobile } from '../useIsMobile'
 import { getDayMessage } from '../dayMessages'
@@ -48,7 +49,7 @@ const groupOverlapping = (sessions) => {
   return clusters
 }
 
-export const TimeTable = ({ courses, colorMode = 'custom' }) => {
+export const TimeTable = ({ courses, colorMode = 'custom', onChanged }) => {
   const isDuo = colorMode === 'duo'
   const isMobile = useIsMobile()
 
@@ -57,6 +58,7 @@ export const TimeTable = ({ courses, colorMode = 'custom' }) => {
   const nowMinutes = now.getHours() * 60 + now.getMinutes()
 
   const [selectedSession, setSelectedSession] = useState(null)
+  const [editing, setEditing] = useState(null) // { course, sessionId }
   const [viewMode, setViewMode] = useState(isMobile ? 'day' : 'week')
   const [selectedDay, setSelectedDay] = useState(todayValue >= 1 && todayValue <= 5 ? todayValue : 1)
 
@@ -68,6 +70,7 @@ export const TimeTable = ({ courses, colorMode = 'custom' }) => {
   const allSessions = courses.flatMap((course) =>
     (course.sessions || []).map((session) => ({
       ...session,
+      courseId: course.id,
       courseName: course.name,
       courseCode: course.code,
       instructor: course.instructor,
@@ -75,6 +78,16 @@ export const TimeTable = ({ courses, colorMode = 'custom' }) => {
       isMine: course.isMine,
     }))
   )
+
+  // a barátod óráit nem lehet szerkeszteni (a Home-on az isMine nincs megadva, ott minden a tiéd)
+  const canEditSelected = selectedSession ? selectedSession.isMine !== false : false
+
+  const startEditing = () => {
+    const course = courses.find((c) => c.id === selectedSession.courseId)
+    if (!course) return
+    setEditing({ course, sessionId: selectedSession.id })
+    setSelectedSession(null)
+  }
 
   const totalMinutes = (END_HOUR - START_HOUR) * 60
   const hourCount = END_HOUR - START_HOUR
@@ -104,10 +117,24 @@ export const TimeTable = ({ courses, colorMode = 'custom' }) => {
   return (
     <div className="timetable">
       <div className="view-toggle">
-        <button className={viewMode === 'week' ? 'active' : ''} onClick={() => setViewMode('week')}>
+        <span
+          className="view-indicator"
+          style={{ transform: `translateX(${isDayView ? 100 : 0}%)` }}
+        />
+        <button
+          type="button"
+          className={!isDayView ? 'active' : ''}
+          aria-pressed={!isDayView}
+          onClick={() => setViewMode('week')}
+        >
           Heti nézet
         </button>
-        <button className={viewMode === 'day' ? 'active' : ''} onClick={() => setViewMode('day')}>
+        <button
+          type="button"
+          className={isDayView ? 'active' : ''}
+          aria-pressed={isDayView}
+          onClick={() => setViewMode('day')}
+        >
           Napi nézet
         </button>
       </div>
@@ -191,7 +218,20 @@ export const TimeTable = ({ courses, colorMode = 'custom' }) => {
         )}
       </div>
 
-      <CourseModal session={selectedSession} onClose={() => setSelectedSession(null)} />
+      <CourseModal
+        session={selectedSession}
+        onClose={() => setSelectedSession(null)}
+        canEdit={canEditSelected}
+        onEdit={startEditing}
+      />
+
+      <CourseFormModal
+        open={Boolean(editing)}
+        onClose={() => setEditing(null)}
+        onSaved={() => onChanged?.()}
+        editingCourse={editing?.course ?? null}
+        editingSessionId={editing?.sessionId}
+      />
     </div>
   )
 }
