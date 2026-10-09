@@ -19,10 +19,12 @@ export const CourseModal = ({ session, onClose }) => {
 
   return (
     <Modal
-      open={Boolean(session)}
-      onClose={onClose}
-      center
-      classNames={{ overlay: 'glass-overlay', modal: 'glass-modal' }}
+    open={Boolean(session)}
+    onClose={onClose}
+    center
+    animationDuration={150}
+    blockScroll={false}
+    classNames={{ overlay: 'glass-overlay', modal: 'glass-modal' }}
     >
       {session && (
         <>

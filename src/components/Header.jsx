@@ -1,8 +1,7 @@
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { useSlidingIndicator } from './useSlidingIndicator'
-import { showSuccess } from '../toast'
 import { FaCalendarCheck } from 'react-icons/fa6'
 import { MdLaptopMac } from 'react-icons/md'
 import { IoPeople, IoSearch, IoMoon, IoSunny } from 'react-icons/io5'
@@ -16,25 +15,20 @@ const NAV_ITEMS = [
 ]
 
 export const Header = () => {
-  const { user, profile, signOut } = useAuth()
+  const { user, profile } = useAuth()
   const { theme, toggleTheme } = useTheme()
-  const navigate = useNavigate()
   const location = useLocation()
 
+  // felső nav: a linkek szélessége eltérő, ezért mérésalapú kapszula
   const desktopNav = useSlidingIndicator(NAV_ITEMS, location.pathname, (item) => item.to)
-  const mobileNav = useSlidingIndicator(NAV_ITEMS, location.pathname, (item) => item.to)
 
-  const handleSignOut = async () => {
-    await signOut()
-    showSuccess('Sikeres kijelentkezés!')
-    navigate('/login')
-  }
+  // alsó nav: a fülek egyenlő szélesek, ezért elég a sorszám
+  const activeIndex = NAV_ITEMS.findIndex((item) => item.to === location.pathname)
 
   if (!user) return null
 
   return (
     <>
-      {/* Felső sáv – mindig látszik */}
       <header className="app-header">
         <div className="header-left">
           <Link to="/" className="header-logo">
@@ -72,13 +66,18 @@ export const Header = () => {
       </header>
 
       {/* Alsó tab-bar – csak mobilon látszik */}
-      <nav className="bottom-nav" ref={mobileNav.containerRef}>
-        <span className="nav-indicator bottom-indicator" style={mobileNav.style} />
-        {NAV_ITEMS.map((item, i) => (
+      <nav className="bottom-nav" style={{ '--nav-count': NAV_ITEMS.length }}>
+        <span
+          className="bottom-indicator"
+          style={{
+            transform: `translateX(${Math.max(activeIndex, 0) * 100}%)`,
+            opacity: activeIndex >= 0 ? 1 : 0,
+          }}
+        />
+        {NAV_ITEMS.map((item) => (
           <Link
             key={item.to}
             to={item.to}
-            ref={(el) => (mobileNav.itemRefs.current[i] = el)}
             className={`bottom-nav-item ${location.pathname === item.to ? 'active' : ''}`}
           >
             <item.Icon className="bottom-nav-icon" />
