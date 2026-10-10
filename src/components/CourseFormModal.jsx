@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Modal } from 'react-responsive-modal'
-import 'react-responsive-modal/styles.css'
+import { Modal } from './Modal'
 import './GlassModal.css'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'

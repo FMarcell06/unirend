@@ -1,5 +1,4 @@
-import { Modal } from 'react-responsive-modal'
-import 'react-responsive-modal/styles.css'
+import { Modal } from './Modal'
 import './GlassModal.css'
 
 const DAYS_HU = { 1: 'Hétfő', 2: 'Kedd', 3: 'Szerda', 4: 'Csütörtök', 5: 'Péntek' }
@@ -18,13 +17,7 @@ export const CourseModal = ({ session, onClose, canEdit = false, onEdit }) => {
     : []
 
   return (
-    <Modal
-      open={Boolean(session)}
-      onClose={onClose}
-      center
-      animationDuration={150}
-      classNames={{ overlay: 'glass-overlay', modal: 'glass-modal' }}
-    >
+    <Modal open={Boolean(session)} onClose={onClose}>
       {session && (
         <>
           <div className="detail-head">
