@@ -11,7 +11,7 @@ export const Home = () => {
   const fetchCourses = async () => {
     const { data, error } = await supabase
       .from('courses')
-      .select(`id, name, code, color, instructor, sessions ( id, day_of_week, start_time, end_time, type, room )`)
+      .select('id, name, code, color, instructor, sessions ( * )')
       .eq('user_id', user.id)
 
     if (!error) setCourses(data)

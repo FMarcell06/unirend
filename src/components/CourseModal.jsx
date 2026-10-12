@@ -13,6 +13,7 @@ export const CourseModal = ({ session, onClose, canEdit = false, onEdit }) => {
         ['Időpont', `${session.start_time.slice(0, 5)}–${session.end_time.slice(0, 5)}`],
         ['Típus', TYPE_HU[session.type] || session.type],
         ['Terem', session.room],
+        ['Gyakoriság', session.weekType && session.weekType !== 'every' ? WEEK_TYPE_LABEL[session.weekType] : null],
       ].filter(([, value]) => value)
     : []
 
