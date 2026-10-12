@@ -55,14 +55,22 @@
 .day-full { display: inline; }
 .day-short { display: none; }
 
-/* ---------- nézet váltó ---------- */
+/* ---------- vezérlősor: nézetváltó + páros/páratlan hét ---------- */
+.timetable-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
 /* ---------- nézet váltó (liquid glass) ---------- */
 .view-toggle {
   position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr; /* két egyenlő széles fül */
   width: fit-content;
-  margin-bottom: 14px;
   padding: 7px;
   flex-shrink: 0;
   border-radius: 9999px;
@@ -139,8 +147,128 @@
   outline-offset: 2px;
 }
 
+/* ---------- páros/páratlan hét gomb (a szöveg cserélődik) ---------- */
+/* ---------- páros/páratlan hét gomb (liquid glass) ---------- */
+.parity-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 124px;
+  justify-content: center;
+  padding: 0 18px;
+  height: 42px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 14px 30px -20px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(26px) saturate(200%);
+  -webkit-backdrop-filter: blur(26px) saturate(200%);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.5, 1),
+    border-color 0.25s ease,
+    background 0.25s ease;
+}
+
+[data-theme="dark"] .parity-btn {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 14px 30px -20px rgba(0, 0, 0, 0.6);
+}
+
+/* üveg-fény, ami végigfut a gombon, ha ráviszed az egeret */
+.parity-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 70%
+  );
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+
+.parity-btn:hover::before {
+  transform: translateX(120%);
+  transition: transform 0.7s ease;
+}
+
+.parity-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .parity-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+/* lenyomáskor összenyomódik, elengedéskor pattogva visszaugrik */
+.parity-btn:active {
+  transform: scale(0.94);
+}
+
+/* ha nem az aktuális hetet nézed: erősebb fehér szegély */
+.parity-btn.is-other {
+  border-color: rgba(255, 255, 255, 0.9);
+}
+
+/* a szöveg csúszva cserélődik */
+.parity-text {
+  display: inline-block;
+  animation: parity-swap 0.38s cubic-bezier(0.34, 1.56, 0.5, 1);
+}
+
+@keyframes parity-swap {
+  from { opacity: 0; transform: translateY(10px) scale(0.92); }
+  to { opacity: 1; transform: none; }
+}
+
+/* az aktuális hetet jelző pont, finoman pulzál */
+.parity-dot {
+  position: relative;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+.parity-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #ffffff;
+  animation: parity-pulse 2s ease-out infinite;
+}
+
+@keyframes parity-pulse {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(3); opacity: 0; }
+}
+
+.parity-btn:focus-visible {
+  outline: 2px solid var(--color-text-soft);
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .view-indicator { transition: none; }
+  .parity-btn,
+  .parity-btn::before { transition: none; }
+  .parity-text,
+  .parity-dot::after { animation: none; }
 }
 
 /* ---------- napi nézet: nyilak + napok (liquid glass kapszula) + üzenet ---------- */
@@ -304,7 +432,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .day-note { animation: none; }
-  .day-indicator { transition: none; }
+  .day-indicator,
+  .view-indicator { transition: none; }
 }
 
 /* ---------- rács ---------- */
@@ -494,15 +623,12 @@
   border-radius: 50%;
 }
 
-.legend-dot.mine { background: #0a84ff; }
-.legend-dot.friend { background: #8b5cf6; }
-
 /* ---------- mobil ---------- */
 @media (max-width: 768px) {
-.home-page {
-  height: calc(100dvh - var(--header-space) - var(--bottom-space));
-  padding: 6px var(--side-gap) 0;
-}
+  .home-page {
+    height: calc(100dvh - var(--header-space) - var(--bottom-space));
+    padding: 6px var(--side-gap) 0;
+  }
 
   .home-greeting h1 {
     font-size: 18px;
@@ -511,6 +637,14 @@
   .timetable {
     --time-col: 34px;
     padding: 10px;
+  }
+
+  .timetable-controls {
+    margin-bottom: 8px;
+  }
+
+  .view-toggle button {
+    padding: 7px 14px;
   }
 
   .day-full { display: none; }
@@ -537,10 +671,6 @@
   .time-label {
     padding-right: 4px;
     font-size: 9px;
-  }
-
-  .view-toggle {
-    margin-bottom: 8px;
   }
 
   .session-block {

@@ -127,6 +127,7 @@ export const Courses = () => {
                           </strong>
                           {s.type && <span>{TYPE_HU[s.type] || s.type}</span>}
                           {s.room && <span>{s.room}</span>}
+                          {s.week_type && s.week_type !== 'every' && <span>{WEEK_TYPE_LABEL[s.week_type]}</span>}
                         </li>
                       ))}
                     </ul>

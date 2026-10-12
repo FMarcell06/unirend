@@ -13,7 +13,7 @@ const readJson = (key, fallback) => {
   }
 }
 
-const COURSE_SELECT = `id, name, code, color, instructor, sessions ( id, day_of_week, start_time, end_time, type, room )`
+const COURSE_SELECT = 'id, name, code, color, instructor, sessions ( * )'
 
 export const CommonView = () => {
   const { user } = useAuth()

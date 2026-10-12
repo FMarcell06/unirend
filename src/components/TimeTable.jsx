@@ -4,6 +4,7 @@ import { CourseFormModal } from './CourseFormModal'
 import { DayNav } from './DayNav'
 import { useIsMobile } from '../useIsMobile'
 import { getDayMessage } from '../dayMessages'
+import { useCurrentParity, occursInWeek, PARITY_LABEL } from '../week'
 import './Timetable.css'
 
 const DAYS = [
@@ -17,7 +18,6 @@ const DAYS = [
 const START_HOUR = 8
 const END_HOUR = 20
 
-// közös nézet két színe (inline, hogy semmilyen CSS ne írhassa felül)
 export const DEFAULT_DUO_COLORS = { mine: '#0a84ff', friend: '#8b5cf6' }
 
 // a választott színből gradiens: a másik vége világosabb árnyalat
@@ -58,6 +58,14 @@ export const TimeTable = ({ courses, colorMode = 'custom', duoColors = DEFAULT_D
   const todayValue = now.getDay() // 0 = vasárnap
   const nowMinutes = now.getHours() * 60 + now.getMinutes()
 
+  const currentParity = useCurrentParity()
+  const [viewParity, setViewParity] = useState(currentParity)
+
+  // új hét kezdetekor visszaáll az aktuális hétre
+  useEffect(() => {
+    setViewParity(currentParity)
+  }, [currentParity])
+
   const [selectedSession, setSelectedSession] = useState(null)
   const [editing, setEditing] = useState(null) // { course, sessionId }
   const [viewMode, setViewMode] = useState(isMobile ? 'day' : 'week')
@@ -68,18 +76,31 @@ export const TimeTable = ({ courses, colorMode = 'custom', duoColors = DEFAULT_D
     setViewMode(isMobile ? 'day' : 'week')
   }, [isMobile])
 
-  const allSessions = courses.flatMap((course) =>
-    (course.sessions || []).map((session) => ({
-      ...session,
-      courseId: course.id,
-      courseName: course.name,
-      courseCode: course.code,
-      instructor: course.instructor,
-      color: course.color,
-      isMine: course.isMine,
-    }))
-  )
+const sessionsOfAllWeeks = courses.flatMap((course) =>
+  (course.sessions || []).map((session) => ({
+    ...session,
+    courseId: course.id,
+    courseName: course.name,
+    courseCode: course.code,
+    instructor: course.instructor,
+    color: course.color,
+    isMine: course.isMine,
+  }))
+)
 
+// csak a kiválasztott hét órái; az allSessions-t használó minden további rész már ezt kapja
+const allSessions = sessionsOfAllWeeks.filter((s) => {
+  const t = s.week_typef
+  return !t || t === 'every' || t === viewParity
+})
+
+  // csak a kiválasztott hétre eső órák (importált függvény nélkül, hogy semmi ne írhassa felül)
+  const visibleSessions = allSessions.filter((s) => {
+    const t = s.week_type
+    if (t === 'even') return viewParity === 'even'
+    if (t === 'odd') return viewParity === 'odd'
+    return true // 'every', üres vagy ismeretlen érték
+  })
   // a barátod óráit nem lehet szerkeszteni (a Home-on az isMine nincs megadva, ott minden a tiéd)
   const canEditSelected = selectedSession ? selectedSession.isMine !== false : false
 
@@ -97,46 +118,60 @@ export const TimeTable = ({ courses, colorMode = 'custom', duoColors = DEFAULT_D
 
   const nowTop = ((nowMinutes - START_HOUR * 60) / totalMinutes) * 100
   const showNow = nowTop >= 0 && nowTop <= 100
-  const todayIsVisible = daysToShow.some((d) => d.value === todayValue)
+  // a piros vonal csak akkor jelenik meg, ha a mostani hetet nézzük
+  const todayIsVisible = daysToShow.some((d) => d.value === todayValue) && viewParity === currentParity
 
   // az üzenet a saját napodról szól, ezért a közös nézetben nem jelenik meg
   const dayMessage = isDuo
     ? null
     : getDayMessage({
-        sessions: allSessions.filter((s) => s.day_of_week === selectedDay && s.isMine !== false),
+        sessions: visibleSessions.filter((s) => s.day_of_week === selectedDay && s.isMine !== false), 
         dayValue: selectedDay,
         isToday: selectedDay === todayValue,
       })
 
-const getBlockBackground = (session) => {
-  if (isDuo) return toGradient(session.isMine === false ? duoColors.friend : duoColors.mine)
-  return session.color || '#3b82f6'
-}
+  const getBlockBackground = (session) => {
+    if (isDuo) return toGradient(session.isMine === false ? duoColors.friend : duoColors.mine)
+    return session.color || '#3b82f6'
+  }
 
   const columns = `var(--time-col) repeat(${daysToShow.length}, minmax(0, 1fr))`
 
   return (
     <div className="timetable">
-      <div className="view-toggle">
-        <span
-          className="view-indicator"
-          style={{ transform: `translateX(${isDayView ? 100 : 0}%)` }}
-        />
+      <div className="timetable-controls">
+        <div className="view-toggle">
+          <span
+            className="view-indicator"
+            style={{ transform: `translateX(${isDayView ? 100 : 0}%)` }}
+          />
+          <button
+            type="button"
+            className={!isDayView ? 'active' : ''}
+            aria-pressed={!isDayView}
+            onClick={() => setViewMode('week')}
+          >
+            Heti nézet
+          </button>
+          <button
+            type="button"
+            className={isDayView ? 'active' : ''}
+            aria-pressed={isDayView}
+            onClick={() => setViewMode('day')}
+          >
+            Napi nézet
+          </button>
+        </div>
+
+        {/* egyetlen gomb: kattintásra a szövege cserélődik páros és páratlan hét között */}
         <button
-          type="button"
-          className={!isDayView ? 'active' : ''}
-          aria-pressed={!isDayView}
-          onClick={() => setViewMode('week')}
+        type="button"
+        className={`parity-btn ${viewParity !== currentParity ? 'is-other' : ''}`}
+        onClick={() => setViewParity((p) => (p === 'even' ? 'odd' : 'even'))}
+        title={viewParity === currentParity ? 'Ez az aktuális hét' : 'Nem az aktuális hetet nézed'}
         >
-          Heti nézet
-        </button>
-        <button
-          type="button"
-          className={isDayView ? 'active' : ''}
-          aria-pressed={isDayView}
-          onClick={() => setViewMode('day')}
-        >
-          Napi nézet
+        <span key={viewParity} className="parity-text">{PARITY_LABEL[viewParity]}</span>
+        {viewParity === currentParity && <span className="parity-dot" aria-label="ez a hét" />}
         </button>
       </div>
 
@@ -170,8 +205,7 @@ const getBlockBackground = (session) => {
         </div>
 
         {daysToShow.map((day) => {
-          const clusters = groupOverlapping(allSessions.filter((s) => s.day_of_week === day.value))
-
+        const clusters = groupOverlapping(visibleSessions.filter((s) => s.day_of_week === day.value))
           return (
             <div key={day.value} className={`day-col ${day.value === todayValue ? 'is-today' : ''}`}>
               {clusters.map((cluster, i) => {

@@ -19,11 +19,18 @@ const TYPES = [
   { value: 'lab', label: 'Labor' },
 ]
 
+const WEEK_TYPES = [
+  { value: 'every', label: 'Minden hét' },
+  { value: 'even', label: 'Páros' },
+  { value: 'odd', label: 'Páratlan' },
+]
+
 const COLORS = ['#0a84ff', '#8b5cf6', '#ff375f', '#ff9f0a', '#30d158', '#64d2ff', '#ff6482', '#ac8e68']
 
 const emptyForm = {
   name: '', code: '', instructor: '', color: COLORS[0],
   dayOfWeek: 1, startTime: '08:00', endTime: '09:30', type: 'lecture', room: '',
+  weekType: 'every',
 }
 
 export const CourseFormModal = ({ open, onClose, onSaved, editingCourse, editingSessionId }) => {
@@ -32,15 +39,16 @@ export const CourseFormModal = ({ open, onClose, onSaved, editingCourse, editing
   const [loading, setLoading] = useState(false)
 
   const isEditing = Boolean(editingCourse)
-  const targetSession = editingCourse?.sessions?.find((s) => s.id === editingSessionId) || editingCourse?.sessions?.[0]
+  const targetSession =
+    editingCourse?.sessions?.find((s) => s.id === editingSessionId) || editingCourse?.sessions?.[0]
   const isCustomColor = !COLORS.includes(form.color.toLowerCase())
 
-    useEffect(() => {
+  useEffect(() => {
     if (!open) return
 
     if (editingCourse) {
-        const session = targetSession || {}
-        setForm({
+      const session = targetSession || {}
+      setForm({
         name: editingCourse.name || '',
         code: editingCourse.code || '',
         instructor: editingCourse.instructor || '',
@@ -50,12 +58,13 @@ export const CourseFormModal = ({ open, onClose, onSaved, editingCourse, editing
         endTime: session.end_time?.slice(0, 5) || '09:30',
         type: session.type || 'lecture',
         room: session.room || '',
-        })
+        weekType: session.week_type || 'every',
+      })
     } else {
-        setForm(emptyForm)
+      setForm(emptyForm)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editingCourse, editingSessionId, open])
+  }, [editingCourse, editingSessionId, open])
 
   const update = (field, value) => setForm((f) => ({ ...f, [field]: value }))
 
@@ -82,6 +91,7 @@ export const CourseFormModal = ({ open, onClose, onSaved, editingCourse, editing
       end_time: form.endTime,
       type: form.type,
       room: form.room.trim(),
+      week_type: form.weekType,
     }
 
     if (isEditing) {
@@ -139,12 +149,7 @@ export const CourseFormModal = ({ open, onClose, onSaved, editingCourse, editing
   }
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      center
-      classNames={{ overlay: 'glass-overlay', modal: 'glass-modal' }}
-    >
+    <Modal open={open} onClose={onClose}>
       <h2 className="modal-title">{isEditing ? 'Kurzus szerkesztése' : 'Új kurzus'}</h2>
 
       <form className="form-stack" onSubmit={handleSubmit}>
@@ -205,7 +210,7 @@ export const CourseFormModal = ({ open, onClose, onSaved, editingCourse, editing
           </div>
         </div>
 
-        <div className="form-row">
+        <div className="form-row form-row-keep">
           <div className="field">
             <label htmlFor="course-start">Kezdés</label>
             <input id="course-start" type="time" value={form.startTime} onChange={(e) => update('startTime', e.target.value)} required />
@@ -227,6 +232,22 @@ export const CourseFormModal = ({ open, onClose, onSaved, editingCourse, editing
                 onClick={() => update('type', t.value)}
               >
                 {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="field">
+          <label>Gyakoriság</label>
+          <div className="segmented segmented-fill" role="group" aria-label="Gyakoriság">
+            {WEEK_TYPES.map((w) => (
+              <button
+                key={w.value}
+                type="button"
+                className={form.weekType === w.value ? 'active' : ''}
+                onClick={() => update('weekType', w.value)}
+              >
+                {w.label}
               </button>
             ))}
           </div>
