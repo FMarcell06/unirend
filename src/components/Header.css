@@ -150,12 +150,37 @@
 }
 
 @media (max-width: 768px) {
+  :root {
+    --side-gap: 10px;
+    --header-top: 6px;
+    --header-height: 56px;
+    --header-gap: 16px;
+    --header-space: calc(var(--header-top) + var(--header-height) + var(--header-gap));
+    --bottom-space: calc(90px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .app-header {
+    position: fixed;
+    top: var(--header-top);
+    left: var(--side-gap);
+    right: var(--side-gap);
+    z-index: 100;
+    margin: 0;
+    padding: 10px 16px;
+  }
+
+  /* hogy a tartalom ne csússzon a fix header és az alsó menü alá */
+  body {
+    padding-top: var(--header-space);
+    padding-bottom: var(--bottom-space);
+  }
+
   .desktop-only {
     display: none !important;
   }
 
   .app-header {
-    margin: 12px;
+    margin: 12px 0px;
     padding: 10px 16px;
   }
 
@@ -170,8 +195,8 @@
 
   .bottom-nav {
     position: fixed;
-    left: 12px;
-    right: 12px;
+    left: var(--side-gap);
+    right: var(--side-gap);
     bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     z-index: 100;
     display: flex;

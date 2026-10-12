@@ -499,10 +499,10 @@
 
 /* ---------- mobil ---------- */
 @media (max-width: 768px) {
-  .home-page {
-    height: calc(100dvh - 78px);
-    padding: 6px 10px 0;
-  }
+.home-page {
+  height: calc(100dvh - var(--header-space) - var(--bottom-space));
+  padding: 6px var(--side-gap) 0;
+}
 
   .home-greeting h1 {
     font-size: 18px;
