@@ -18,10 +18,11 @@ const START_HOUR = 8
 const END_HOUR = 20
 
 // közös nézet két színe (inline, hogy semmilyen CSS ne írhassa felül)
-const DUO_BACKGROUND = {
-  mine: 'linear-gradient(135deg, #0a84ff, #5ac8fa)',
-  friend: 'linear-gradient(135deg, #8b5cf6, #c084fc)',
-}
+export const DEFAULT_DUO_COLORS = { mine: '#0a84ff', friend: '#8b5cf6' }
+
+// a választott színből gradiens: a másik vége világosabb árnyalat
+const toGradient = (color) =>
+  `linear-gradient(135deg, ${color}, color-mix(in srgb, ${color} 68%, white))`
 
 const timeToMinutes = (time) => {
   const [h, m] = time.split(':').map(Number)
@@ -49,7 +50,7 @@ const groupOverlapping = (sessions) => {
   return clusters
 }
 
-export const TimeTable = ({ courses, colorMode = 'custom', onChanged }) => {
+export const TimeTable = ({ courses, colorMode = 'custom', duoColors = DEFAULT_DUO_COLORS, onChanged }) => {
   const isDuo = colorMode === 'duo'
   const isMobile = useIsMobile()
 
@@ -107,10 +108,10 @@ export const TimeTable = ({ courses, colorMode = 'custom', onChanged }) => {
         isToday: selectedDay === todayValue,
       })
 
-  const getBlockBackground = (session) => {
-    if (isDuo) return session.isMine === false ? DUO_BACKGROUND.friend : DUO_BACKGROUND.mine
-    return session.color || '#3b82f6'
-  }
+const getBlockBackground = (session) => {
+  if (isDuo) return toGradient(session.isMine === false ? duoColors.friend : duoColors.mine)
+  return session.color || '#3b82f6'
+}
 
   const columns = `var(--time-col) repeat(${daysToShow.length}, minmax(0, 1fr))`
 

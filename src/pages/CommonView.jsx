@@ -1,45 +1,62 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { useAuth } from '../context/AuthContext'
-import { TimeTable } from '../components/TimeTable'
+import { TimeTable, DEFAULT_DUO_COLORS } from '../components/TimeTable'
+import { ColorSwatches } from '../components/ColorSwatches'
+
+const readJson = (key, fallback) => {
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : fallback
+  } catch {
+    return fallback
+  }
+}
+
+const COURSE_SELECT = `id, name, code, color, instructor, sessions ( id, day_of_week, start_time, end_time, type, room )`
 
 export const CommonView = () => {
   const { user } = useAuth()
+  const friendKey = `commonView:lastFriend:${user.id}`
+  const colorsKey = `commonView:colors:${user.id}`
+
   const [friends, setFriends] = useState([])
+  const [selectedFriendId, setSelectedFriendId] = useState(() => {
+    try {
+      return localStorage.getItem(friendKey) || ''
+    } catch {
+      return ''
+    }
+  })
   const [myCourses, setMyCourses] = useState([])
-  const storageKey = `commonView:lastFriend:${user.id}`
   const [friendCourses, setFriendCourses] = useState([])
   const [loading, setLoading] = useState(true)
+const [colorOpen, setColorOpen] = useState(null) // null | 'mine' | 'friend'
+  const [colors, setColors] = useState(() => ({ ...DEFAULT_DUO_COLORS, ...readJson(colorsKey, {}) }))
 
-const [selectedFriendId, setSelectedFriendId] = useState(() => {
-  try {
-    return localStorage.getItem(storageKey) || ''
-  } catch {
-    return ''
+  const handleSelectFriend = (id) => {
+    setSelectedFriendId(id)
+    try {
+      if (id) localStorage.setItem(friendKey, id)
+      else localStorage.removeItem(friendKey)
+    } catch {
+      // nem gond, ha nem menthető
+    }
   }
-})
 
-const handleSelectFriend = (id) => {
-  setSelectedFriendId(id)
-  try {
-    if (id) localStorage.setItem(storageKey, id)
-    else localStorage.removeItem(storageKey)
-  } catch {
-    // ha a tárolás nem elérhető, nem gond, csak nem jegyezzük meg
+  const handleColor = (who, color) => {
+    setColors((prev) => {
+      const next = { ...prev, [who]: color }
+      try {
+        localStorage.setItem(colorsKey, JSON.stringify(next))
+      } catch {
+        // nem gond, ha nem menthető
+      }
+      return next
+    })
   }
-}
 
-
-const fetchMyCourses = async () => {
-  const { data, error } = await supabase
-    .from('courses')
-    .select(`id, name, code, color, instructor, sessions ( id, day_of_week, start_time, end_time, type, room )`)
-    .eq('user_id', user.id)
-
-  if (!error) setMyCourses(data)
-}
-
-  // barátok lekérése (csak az elfogadottak)
+  // elfogadott ismerősök
   useEffect(() => {
     const fetchFriends = async () => {
       const { data, error } = await supabase
@@ -53,11 +70,7 @@ const fetchMyCourses = async () => {
         .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
 
       if (!error) {
-        const list = data.map((row) => {
-          const isMine = row.user_id === user.id
-          return isMine ? row.addressee : row.requester
-        })
-        setFriends(list)
+        setFriends(data.map((row) => (row.user_id === user.id ? row.addressee : row.requester)))
       }
       setLoading(false)
     }
@@ -65,18 +78,29 @@ const fetchMyCourses = async () => {
     if (user) fetchFriends()
   }, [user])
 
-useEffect(() => {
-  if (!loading && selectedFriendId && !friends.some((f) => f.id === selectedFriendId)) {
-    handleSelectFriend('')
+  // ha a mentett ismerős már nincs a listában, töröljük a választást
+  useEffect(() => {
+    if (!loading && selectedFriendId && !friends.some((f) => f.id === selectedFriendId)) {
+      handleSelectFriend('')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [friends, loading])
+
+  const fetchMyCourses = async () => {
+    const { data, error } = await supabase
+      .from('courses')
+      .select(COURSE_SELECT)
+      .eq('user_id', user.id)
+
+    if (!error) setMyCourses(data)
   }
-}, [friends, loading])
 
-useEffect(() => {
-  if (user) fetchMyCourses()
-}, [user])
+  useEffect(() => {
+    if (user) fetchMyCourses()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
 
-
-  // kiválasztott barát kurzusainak lekérése
+  // a kiválasztott ismerős kurzusai
   useEffect(() => {
     const fetchFriendCourses = async () => {
       if (!selectedFriendId) {
@@ -86,7 +110,7 @@ useEffect(() => {
 
       const { data, error } = await supabase
         .from('courses')
-        .select(`id, name, code, color, instructor, sessions ( id, day_of_week, start_time, end_time, type, room )`)
+        .select(COURSE_SELECT)
         .eq('user_id', selectedFriendId)
 
       if (!error) setFriendCourses(data)
@@ -96,51 +120,80 @@ useEffect(() => {
     fetchFriendCourses()
   }, [selectedFriendId])
 
-  // a saját és a barát kurzusait összefésüljük egy listába, hogy a TimeTable meg tudja jeleníteni mindkettőt
   const combinedCourses = [
     ...myCourses.map((c) => ({ ...c, isMine: true })),
     ...friendCourses.map((c) => ({ ...c, isMine: false })),
   ]
-  
 
-console.log('myCourses:', JSON.stringify(myCourses, null, 2))
-console.log('friendCourses:', JSON.stringify(friendCourses, null, 2))
-console.log('combinedCourses:', JSON.stringify(combinedCourses, null, 2))
+  const friendName = friends.find((f) => f.id === selectedFriendId)?.display_name
 
   return (
-  <div className="home-page">
-    <div className="home-greeting">
-      <h1>Közös nézet</h1>
-    </div>
+    <div className="home-page">
+      <div className="home-greeting">
+        <h1>Közös nézet</h1>
+      </div>
 
-    {loading ? (
-      <p>Betöltés...</p>
-    ) : friends.length === 0 ? (
-      <p>Még nincs elfogadott ismerősöd. Adj hozzá valakit az Ismerősök oldalon!</p>
-    ) : (
-      <>
-        <div className="common-controls">
+      {loading ? (
+        <p>Betöltés...</p>
+      ) : friends.length === 0 ? (
+        <p>Még nincs elfogadott ismerősöd. Adj hozzá valakit az Ismerősök oldalon!</p>
+      ) : (
+        <>
+          <div className="common-controls">
             <select value={selectedFriendId} onChange={(e) => handleSelectFriend(e.target.value)}>
-            <option value="">Válassz ismerőst</option>
-            {friends.map((f) => (
+              <option value="">Válassz ismerőst</option>
+              {friends.map((f) => (
                 <option key={f.id} value={f.id}>{f.display_name}</option>
-            ))}
+              ))}
             </select>
 
-          {selectedFriendId && (
-            <div className="legend" style={{ marginTop: 10 }}>
-              <span><span className="legend-dot mine" />Te</span>
-              <span>
-                <span className="legend-dot friend" />
-                {friends.find((f) => f.id === selectedFriendId)?.display_name}
-              </span>
-            </div>
-          )}
-        </div>
+{selectedFriendId && (
+  <>
+    <div className="legend legend-interactive">
+      <button
+        type="button"
+        className={`legend-chip ${colorOpen === 'mine' ? 'open' : ''}`}
+        onClick={() => setColorOpen((o) => (o === 'mine' ? null : 'mine'))}
+        aria-expanded={colorOpen === 'mine'}
+      >
+        <span className="legend-dot" style={{ background: colors.mine }} />
+        Te
+      </button>
 
-        {selectedFriendId && <TimeTable courses={combinedCourses} colorMode="duo" onChanged={fetchMyCourses} />}
-      </>
+      <button
+        type="button"
+        className={`legend-chip ${colorOpen === 'friend' ? 'open' : ''}`}
+        onClick={() => setColorOpen((o) => (o === 'friend' ? null : 'friend'))}
+        aria-expanded={colorOpen === 'friend'}
+      >
+        <span className="legend-dot" style={{ background: colors.friend }} />
+        {friendName}
+      </button>
+    </div>
+
+    {colorOpen && (
+      <div className="color-panel">
+        <ColorSwatches
+          value={colors[colorOpen]}
+          onChange={(c) => handleColor(colorOpen, c)}
+          label={colorOpen === 'mine' ? 'Saját szín' : `${friendName} színe`}
+        />
+      </div>
     )}
-  </div>
-)
+  </>
+)}
+          </div>
+
+          {selectedFriendId && (
+            <TimeTable
+              courses={combinedCourses}
+              colorMode="duo"
+              duoColors={colors}
+              onChanged={fetchMyCourses}
+            />
+          )}
+        </>
+      )}
+    </div>
+  )
 }
