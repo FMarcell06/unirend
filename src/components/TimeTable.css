@@ -555,6 +555,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.35),
     0 4px 12px rgba(0, 0, 0, 0.14);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  animation: block-in 0.4s cubic-bezier(0.34, 1.56, 0.5, 1) backwards;
 }
 
 .session-block::before {
@@ -588,6 +589,51 @@
 
 .session-room {
   opacity: 0.8;
+}
+
+/* megjelenés: kicsiről nő, közben előúszik */
+/* megjelenés: nulla szélességről nő, közben előúszik; a többi blokk közben összébb húzódik */
+@keyframes block-in {
+  from {
+    opacity: 0;
+    flex-grow: 0.001;
+    padding-left: 0;
+    padding-right: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    transform: translateY(10px) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* eltűnés: nulla szélességre zsugorodik; a maradók kitöltik a helyét */
+.session-block.is-leaving {
+  animation: block-out 0.22s ease forwards;
+  pointer-events: none;
+  white-space: nowrap; /* ne törjön sorba zsugorodás közben */
+}
+
+@keyframes block-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    flex-grow: 0.001;
+    padding-left: 0;
+    padding-right: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    transform: scale(0.88);
+  }
+}
+
+/* ha egy átfedő csoport mérete vagy helye változik, az is animálódjon */
+.cluster-wrapper {
+  transition: top 0.3s ease, height 0.3s ease;
 }
 
 /* ---------- közös nézet segédelemek ---------- */

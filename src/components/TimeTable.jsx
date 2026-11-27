@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { CourseModal } from './CourseModal'
 import { CourseFormModal } from './CourseFormModal'
 import { DayNav } from './DayNav'
 import { useIsMobile } from '../useIsMobile'
 import { getDayMessage } from '../dayMessages'
-import { useCurrentParity, occursInWeek, PARITY_LABEL } from '../week'
+import { useCurrentParity, PARITY_LABEL } from '../week'
 import './Timetable.css'
 
 const DAYS = [
@@ -76,31 +76,56 @@ export const TimeTable = ({ courses, colorMode = 'custom', duoColors = DEFAULT_D
     setViewMode(isMobile ? 'day' : 'week')
   }, [isMobile])
 
-const sessionsOfAllWeeks = courses.flatMap((course) =>
-  (course.sessions || []).map((session) => ({
-    ...session,
-    courseId: course.id,
-    courseName: course.name,
-    courseCode: course.code,
-    instructor: course.instructor,
-    color: course.color,
-    isMine: course.isMine,
-  }))
-)
+  // minden óra, minden héttel együtt
+  const allSessions = courses.flatMap((course) =>
+    (course.sessions || []).map((session) => ({
+      ...session,
+      courseId: course.id,
+      courseName: course.name,
+      courseCode: course.code,
+      instructor: course.instructor,
+      color: course.color,
+      isMine: course.isMine,
+    }))
+  )
 
-// csak a kiválasztott hét órái; az allSessions-t használó minden további rész már ezt kapja
-const allSessions = sessionsOfAllWeeks.filter((s) => {
-  const t = s.week_typef
-  return !t || t === 'every' || t === viewParity
-})
-
-  // csak a kiválasztott hétre eső órák (importált függvény nélkül, hogy semmi ne írhassa felül)
+  // csak a kiválasztott hétre eső órák
   const visibleSessions = allSessions.filter((s) => {
     const t = s.week_type
     if (t === 'even') return viewParity === 'even'
     if (t === 'odd') return viewParity === 'odd'
     return true // 'every', üres vagy ismeretlen érték
   })
+
+  // eltűnő órák: váltás után még 220 ms-ig kirajzoljuk őket, hogy lefusson a kiúszás
+  const [leaving, setLeaving] = useState([])
+  const prevVisibleRef = useRef(null)
+
+  useLayoutEffect(() => {
+    const prev = prevVisibleRef.current
+    if (!prev) return
+    const nowIds = new Set(visibleSessions.map((s) => s.id))
+    const gone = prev.filter((s) => !nowIds.has(s.id))
+    if (gone.length === 0) return
+
+    setLeaving(gone)
+    const t = setTimeout(() => setLeaving([]), 220)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewParity])
+
+  useLayoutEffect(() => {
+    prevVisibleRef.current = visibleSessions
+  })
+
+  // a rács a látható és az éppen eltűnő órákból rajzol
+  const renderSessions = [
+    ...visibleSessions,
+    ...leaving
+      .filter((l) => !visibleSessions.some((s) => s.id === l.id))
+      .map((s) => ({ ...s, leaving: true })),
+  ]
+
   // a barátod óráit nem lehet szerkeszteni (a Home-on az isMine nincs megadva, ott minden a tiéd)
   const canEditSelected = selectedSession ? selectedSession.isMine !== false : false
 
@@ -125,7 +150,7 @@ const allSessions = sessionsOfAllWeeks.filter((s) => {
   const dayMessage = isDuo
     ? null
     : getDayMessage({
-        sessions: visibleSessions.filter((s) => s.day_of_week === selectedDay && s.isMine !== false), 
+        sessions: visibleSessions.filter((s) => s.day_of_week === selectedDay && s.isMine !== false),
         dayValue: selectedDay,
         isToday: selectedDay === todayValue,
       })
@@ -165,13 +190,13 @@ const allSessions = sessionsOfAllWeeks.filter((s) => {
 
         {/* egyetlen gomb: kattintásra a szövege cserélődik páros és páratlan hét között */}
         <button
-        type="button"
-        className={`parity-btn ${viewParity !== currentParity ? 'is-other' : ''}`}
-        onClick={() => setViewParity((p) => (p === 'even' ? 'odd' : 'even'))}
-        title={viewParity === currentParity ? 'Ez az aktuális hét' : 'Nem az aktuális hetet nézed'}
+          type="button"
+          className={`parity-btn ${viewParity !== currentParity ? 'is-other' : ''}`}
+          onClick={() => setViewParity((p) => (p === 'even' ? 'odd' : 'even'))}
+          title={viewParity === currentParity ? 'Ez az aktuális hét' : 'Nem az aktuális hetet nézed'}
         >
-        <span key={viewParity} className="parity-text">{PARITY_LABEL[viewParity]}</span>
-        {viewParity === currentParity && <span className="parity-dot" aria-label="ez a hét" />}
+          <span key={viewParity} className="parity-text">{PARITY_LABEL[viewParity]}</span>
+          {viewParity === currentParity && <span className="parity-dot" aria-label="ez a hét" />}
         </button>
       </div>
 
@@ -205,7 +230,8 @@ const allSessions = sessionsOfAllWeeks.filter((s) => {
         </div>
 
         {daysToShow.map((day) => {
-        const clusters = groupOverlapping(visibleSessions.filter((s) => s.day_of_week === day.value))
+          const clusters = groupOverlapping(renderSessions.filter((s) => s.day_of_week === day.value))
+
           return (
             <div key={day.value} className={`day-col ${day.value === todayValue ? 'is-today' : ''}`}>
               {clusters.map((cluster, i) => {
@@ -225,7 +251,7 @@ const allSessions = sessionsOfAllWeeks.filter((s) => {
                       return (
                         <div
                           key={session.id}
-                          className="session-block"
+                          className={`session-block ${session.leaving ? 'is-leaving' : ''}`}
                           style={{
                             top: `${innerTop}%`,
                             height: `${innerHeight}%`,
