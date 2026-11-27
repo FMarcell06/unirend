@@ -22,15 +22,13 @@
 
 <table>
   <tr>
-    <td align="center"><b>Napi nézet (Mobil)</b></td>
+    <td align="center"><b>Napi nézet (mobil)</b></td>
     <td align="center"><b>Kurzusok (sötét mód)</b></td>
     <td align="center"><b>Közös nézet</b></td>
   </tr>
   <tr>
-    <td><img src="https://i.ibb.co/1t62vcPw/Screenshot-2026-11-27-at-20-19-06.png
-    " alt="Napi nézet" width="250" /></td>
-    <td><img src="https://i.ibb.co/SXTkkMX2/Screenshot-2026-11-27-at-20-19-20.png
-    " alt="Kurzusok" width="250" /></td>
+    <td><img src="https://i.ibb.co/1t62vcPw/Screenshot-2026-11-27-at-20-19-06.png" alt="Napi nézet" width="250" /></td>
+    <td><img src="https://i.ibb.co/SXTkkMX2/Screenshot-2026-11-27-at-20-19-20.png" alt="Kurzusok" width="250" /></td>
     <td><img src="https://i.ibb.co/mCVZ5Sy8/Screenshot-2026-11-27-at-20-19-41.png" alt="Közös nézet" width="250" /></td>
   </tr>
 </table>
